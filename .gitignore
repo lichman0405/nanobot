@@ -16,3 +16,4 @@ docs/
 
 # Manual test scripts with API keys
 tests/test_usage_deepseek.py
+tests/test_pricing_verification.py
