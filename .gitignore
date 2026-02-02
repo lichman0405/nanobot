@@ -13,3 +13,6 @@ docs/
 *.pyz
 *.pywz
 *.pyzz
+
+# Manual test scripts with API keys
+tests/test_usage_deepseek.py
