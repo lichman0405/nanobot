@@ -204,6 +204,7 @@ def gateway(
         max_iterations=config.agents.defaults.max_tool_iterations,
         brave_api_key=config.tools.web.search.api_key or None,
         exec_config=config.tools.exec,
+        usage_config=config.usage,  # Enable budget alerts
     )
     
     # Create cron service
@@ -311,7 +312,11 @@ def agent(
         provider=provider,
         workspace=config.workspace_path,
         brave_api_key=config.tools.web.search.api_key or None,
+<<<<<<< HEAD
         exec_config=config.tools.exec,
+=======
+        usage_config=config.usage,  # Enable budget alerts
+>>>>>>> 8f51191 (feat: add proactive budget alerts to chat channels)
     )
     
     if message:
