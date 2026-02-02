@@ -62,6 +62,13 @@ class GatewayConfig(BaseModel):
     port: int = 18790
 
 
+class UsageConfig(BaseModel):
+    """Usage tracking and budget configuration."""
+    daily_budget_usd: float = 0.0  # Daily budget limit (0 = no limit)
+    monthly_budget_usd: float = 0.0  # Monthly budget limit (0 = no limit)
+    warn_at_percent: int = 80  # Warn when usage reaches this percentage
+
+
 class WebSearchConfig(BaseModel):
     """Web search tool configuration."""
     api_key: str = ""  # Brave Search API key
@@ -92,6 +99,7 @@ class Config(BaseSettings):
     providers: ProvidersConfig = Field(default_factory=ProvidersConfig)
     gateway: GatewayConfig = Field(default_factory=GatewayConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
+    usage: UsageConfig = Field(default_factory=UsageConfig)
     
     @property
     def workspace_path(self) -> Path:
