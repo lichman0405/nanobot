@@ -637,5 +637,169 @@ def status():
         console.print(f"vLLM/Local: {vllm_status}")
 
 
+# ============================================================================
+# Memory Commands
+# ============================================================================
+
+memory_app = typer.Typer(
+    name="memory",
+    help="Memory system commands (git-like memory management)",
+    no_args_is_help=True,
+)
+app.add_typer(memory_app, name="memory")
+
+
+@memory_app.command("log")
+def memory_log(
+    oneline: bool = typer.Option(False, "--oneline", "-1", help="One line per commit"),
+    show_events: bool = typer.Option(False, "--events", "-e", help="Show event details"),
+    max_commits: int = typer.Option(20, "--max", "-n", help="Maximum commits to show"),
+):
+    """Show memory commit history (like git log)."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.agent.memory.visualize import format_commit_log, format_commit_oneline
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    if oneline:
+        output = format_commit_oneline(store, max_commits)
+    else:
+        output = format_commit_log(store, max_commits, show_events)
+    
+    console.print(output)
+
+
+@memory_app.command("branches")
+def memory_branches():
+    """List all memory branches (personas)."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.agent.memory.visualize import format_branches
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    output = format_branches(store)
+    console.print(output)
+
+
+@memory_app.command("view")
+def memory_view(
+    max_items: int = typer.Option(50, "--max", "-n", help="Maximum items to show"),
+):
+    """Show current memory view."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.agent.memory.visualize import format_memory_view
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    output = format_memory_view(store, max_items)
+    if output:
+        console.print(output)
+    else:
+        console.print("[dim]No memories yet.[/dim]")
+
+
+@memory_app.command("graph")
+def memory_graph(
+    format: str = typer.Option("mermaid", "--format", "-f", help="Output format: mermaid, timeline"),
+    max_commits: int = typer.Option(20, "--max", "-n", help="Maximum commits to include"),
+):
+    """Generate memory graph visualization."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.agent.memory.visualize import generate_mermaid_graph, generate_mermaid_timeline
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    if format == "timeline":
+        output = generate_mermaid_timeline(store, max_commits)
+    else:
+        output = generate_mermaid_graph(store, max_commits)
+    
+    console.print(output)
+    console.print("\n[dim]Copy the above to https://mermaid.live to visualize[/dim]")
+
+
+@memory_app.command("checkout")
+def memory_checkout(
+    branch: str = typer.Argument(..., help="Branch name to switch to"),
+):
+    """Switch to a different memory branch (persona)."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    if store.switch_branch(branch):
+        console.print(f"[green]✓[/green] Switched to branch '{branch}'")
+    else:
+        console.print(f"[red]Error: Branch '{branch}' not found.[/red]")
+        console.print("Available branches:")
+        for b in store.list_branches():
+            console.print(f"  - {b.name}")
+
+
+@memory_app.command("create-branch")
+def memory_create_branch(
+    name: str = typer.Argument(..., help="New branch name"),
+    persona: str = typer.Option(None, "--persona", "-p", help="Persona description"),
+):
+    """Create a new memory branch (persona)."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    # Check if branch exists
+    if store.get_branch(name):
+        console.print(f"[red]Error: Branch '{name}' already exists.[/red]")
+        raise typer.Exit(1)
+    
+    branch = store.create_branch(name, persona)
+    console.print(f"[green]✓[/green] Created branch '{branch.name}'")
+    if persona:
+        console.print(f"  Persona: {persona}")
+
+
+@memory_app.command("stats")
+def memory_stats():
+    """Show memory system statistics."""
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    console.print(f"{__logo__} Memory Statistics\n")
+    
+    # Branch info
+    branches = store.list_branches()
+    current = store.get_current_branch()
+    console.print(f"Current branch: [cyan]{current}[/cyan]")
+    console.print(f"Total branches: {len(branches)}")
+    
+    # Commit/event counts
+    console.print(f"Total commits:  {store.ledger.count_commits()}")
+    console.print(f"Total events:   {store.ledger.count_events()}")
+    
+    # Memory view stats
+    view = store.view.compute()
+    console.print(f"Active memories: {len(view)}")
+    
+    # Storage info
+    events_size = sum(f.stat().st_size for f in store.events_dir.glob("*.json"))
+    commits_size = sum(f.stat().st_size for f in store.commits_dir.glob("*.json"))
+    total_size = events_size + commits_size
+    console.print(f"\nStorage: {total_size / 1024:.1f} KB")
+
+
 if __name__ == "__main__":
     app()

@@ -11,6 +11,7 @@ from nanobot.bus.events import InboundMessage, OutboundMessage
 from nanobot.bus.queue import MessageBus
 from nanobot.providers.base import LLMProvider
 from nanobot.agent.context import ContextBuilder
+from nanobot.agent.memory import MemoryController
 from nanobot.agent.tools.registry import ToolRegistry
 from nanobot.agent.tools.filesystem import ReadFileTool, WriteFileTool, EditFileTool, ListDirTool
 from nanobot.agent.tools.shell import ExecTool
@@ -58,6 +59,13 @@ class AgentLoop:
             bus=bus,
             model=self.model,
             brave_api_key=brave_api_key,
+        )
+        
+        # Memory controller for autonomous memory management
+        self.memory_controller = MemoryController(
+            store=self.context.memory,
+            provider=provider,
+            model=self.model,
         )
         
         self._running = False
@@ -209,6 +217,9 @@ class AgentLoop:
         session.add_message("assistant", final_content)
         self.sessions.save(session)
         
+        # Process conversation for memory (autonomous)
+        await self._process_for_memory(msg.content, final_content, msg.session_key)
+        
         return OutboundMessage(
             channel=msg.channel,
             chat_id=msg.chat_id,
@@ -327,3 +338,47 @@ class AgentLoop:
         
         response = await self._process_message(msg)
         return response.content if response else ""
+    
+    async def _process_for_memory(
+        self,
+        user_message: str,
+        assistant_response: str,
+        session_key: str | None = None,
+    ) -> None:
+        """
+        Process a conversation exchange for autonomous memory creation.
+        
+        This runs after each message is processed and uses the LLM to:
+        1. Determine if anything should be remembered
+        2. Extract structured memories
+        3. Detect persona switches
+        4. Commit memories to the store
+        
+        Args:
+            user_message: The user's message.
+            assistant_response: The agent's response.
+            session_key: Optional session identifier.
+        """
+        try:
+            # Build conversation context
+            conversation = f"User: {user_message}\n\nAssistant: {assistant_response}"
+            
+            # Check if persona should switch
+            new_persona = await self.memory_controller.maybe_switch_persona(conversation)
+            if new_persona:
+                logger.info(f"Switched to persona: {new_persona}")
+            
+            # Process for memory extraction
+            events = await self.memory_controller.process_conversation(
+                conversation,
+                session_key=session_key,
+            )
+            
+            if events:
+                logger.info(f"Created {len(events)} memory events")
+                for event in events:
+                    logger.debug(f"  - {event}")
+        
+        except Exception as e:
+            # Memory processing should not fail the main flow
+            logger.warning(f"Memory processing error (non-fatal): {e}")

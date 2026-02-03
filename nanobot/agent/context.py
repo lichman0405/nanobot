@@ -44,10 +44,18 @@ class ContextBuilder:
         if bootstrap:
             parts.append(bootstrap)
         
-        # Memory context
-        memory = self.memory.get_memory_context()
-        if memory:
-            parts.append(f"# Memory\n\n{memory}")
+        # Memory context (using new git-like memory view)
+        memory_context = self.memory.view.to_context_string()
+        if memory_context:
+            branch_name = self.memory.get_current_branch()
+            branch = self.memory.get_branch(branch_name)
+            persona_info = f" (persona: {branch.persona})" if branch and branch.persona else ""
+            parts.append(f"# Memory [{branch_name}]{persona_info}\n\n{memory_context}")
+        
+        # Also include legacy memory if exists (for backward compatibility)
+        legacy_memory = self.memory.get_memory_context()
+        if legacy_memory and not memory_context:
+            parts.append(f"# Memory (Legacy)\n\n{legacy_memory}")
         
         # Skills - progressive loading
         # 1. Always-loaded skills: include full content

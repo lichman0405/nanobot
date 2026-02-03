@@ -58,6 +58,31 @@
   </tr>
 </table>
 
+## 🧠 Git-Like Memory System
+
+nanobot features a unique **git-like memory architecture** that provides:
+
+- **Traceable Memory**: Every piece of learned information is hashed and linked, like git commits
+- **Persona Branches**: Different personalities maintain separate memory timelines
+- **Autonomous Management**: LLM decides what to remember/forget without user intervention
+- **Human-Readable**: JSON storage, Mermaid visualization, CLI commands
+
+```bash
+# View memory history (like git log)
+nanobot memory log
+
+# List personas/branches
+nanobot memory branches
+
+# Generate visualization
+nanobot memory graph
+
+# Statistics
+nanobot memory stats
+```
+
+> See [Memory Architecture](docs/MEMORY_ARCHITECTURE.md) for full documentation.
+
 ## 📦 Install
 
 **Install from PyPi**
