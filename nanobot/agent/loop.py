@@ -93,6 +93,10 @@ class AgentLoop:
         # Spawn tool (for subagents)
         spawn_tool = SpawnTool(manager=self.subagents)
         self.tools.register(spawn_tool)
+        
+        # Memory tools - allow LLM to actively query/store memories
+        from nanobot.agent.tools.memory import register_memory_tools
+        register_memory_tools(self.tools, self.context.memory)
     
     async def run(self) -> None:
         """Run the agent loop, processing messages from the bus."""
