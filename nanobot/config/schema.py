@@ -53,6 +53,7 @@ class ProvidersConfig(BaseModel):
     zhipu: ProviderConfig = Field(default_factory=ProviderConfig)
     vllm: ProviderConfig = Field(default_factory=ProviderConfig)
     gemini: ProviderConfig = Field(default_factory=ProviderConfig)
+    deepseek: ProviderConfig = Field(default_factory=ProviderConfig)
 
 
 class GatewayConfig(BaseModel):
@@ -85,15 +86,33 @@ class Config(BaseSettings):
     gateway: GatewayConfig = Field(default_factory=GatewayConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     
+    model_config = {"extra": "ignore"}  # Ignore unknown fields in config.json
+    
     @property
     def workspace_path(self) -> Path:
         """Get expanded workspace path."""
         return Path(self.agents.defaults.workspace).expanduser()
     
     def get_api_key(self) -> str | None:
-        """Get API key in priority order: OpenRouter > Anthropic > OpenAI > Gemini > Zhipu > vLLM."""
+        """Get API key in priority order based on configured model."""
+        model = self.agents.defaults.model.lower()
+        
+        # Check model-specific provider first
+        if "deepseek" in model and self.providers.deepseek.api_key:
+            return self.providers.deepseek.api_key
+        if "anthropic" in model and self.providers.anthropic.api_key:
+            return self.providers.anthropic.api_key
+        if ("openai" in model or "gpt" in model) and self.providers.openai.api_key:
+            return self.providers.openai.api_key
+        if "gemini" in model and self.providers.gemini.api_key:
+            return self.providers.gemini.api_key
+        if ("zhipu" in model or "glm" in model) and self.providers.zhipu.api_key:
+            return self.providers.zhipu.api_key
+        
+        # Fallback: any available key
         return (
             self.providers.openrouter.api_key or
+            self.providers.deepseek.api_key or
             self.providers.anthropic.api_key or
             self.providers.openai.api_key or
             self.providers.gemini.api_key or
