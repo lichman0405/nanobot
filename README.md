@@ -13,15 +13,16 @@
 
 🐈 **nanobot** is an **ultra-lightweight** personal AI assistant inspired by [Clawdbot](https://github.com/openclaw/openclaw) 
 
-⚡️ Delivers core agent functionality in just **~4,000** lines of code — **99% smaller** than Clawdbot's 430k+ lines.
+⚡️ Delivers core agent functionality in just **~7,500** lines of code — **98% smaller** than Clawdbot's 430k+ lines.
 
 ## 📢 News
 
+- **2026-02-03** 🧠 Git-like Memory Architecture released! Agent can now autonomously manage its memories.
 - **2025-02-01** 🎉 nanobot launched! Welcome to try 🐈 nanobot!
 
 ## Key Features of nanobot:
 
-🪶 **Ultra-Lightweight**: Just ~4,000 lines of code — 99% smaller than Clawdbot - core functionality.
+🪶 **Ultra-Lightweight**: Just ~7,500 lines of code — 98% smaller than Clawdbot - core functionality.
 
 🔬 **Research-Ready**: Clean, readable code that's easy to understand, modify, and extend for research.
 
