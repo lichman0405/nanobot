@@ -69,6 +69,74 @@ Send a message to the user (used internally).
 message(content: str, channel: str = None, chat_id: str = None) -> str
 ```
 
+## Memory Management
+
+Tools for autonomous memory management. The agent can use these to remember, recall, and organize information.
+
+### memory_search
+Search memories by keyword, subject, or scope.
+```
+memory_search(query: str = None, subject: str = None, scope: str = None) -> str
+```
+
+### memory_add
+Store a new fact as a subject-predicate-object triple.
+```
+memory_add(subject: str, predicate: str, object: str, scope: str = None, confidence: float = 0.9, evidence: str = None) -> str
+```
+
+**Example:**
+```python
+memory_add(
+    subject="User",
+    predicate="prefers",
+    object="dark mode",
+    scope="permanent",
+    confidence=0.95
+)
+```
+
+### memory_update
+Update an existing memory with a new value.
+```
+memory_update(subject: str, predicate: str, new_value: str, reason: str = None) -> str
+```
+
+### memory_forget
+Soft-delete a memory (creates a forget event, preserves history).
+```
+memory_forget(subject: str, predicate: str, reason: str) -> str
+```
+
+### memory_branch
+Manage memory branches (personas).
+```
+memory_branch(action: str, name: str = None, persona: str = None) -> str
+```
+
+**Actions:**
+- `list`: List all branches
+- `create`: Create a new branch with optional persona description
+- `switch`: Switch to an existing branch
+
+### memory_history
+View commit history of memory changes.
+```
+memory_history(limit: int = 10, show_events: bool = False) -> str
+```
+
+### memory_consolidate
+Generate a consolidation report for memory maintenance.
+```
+memory_consolidate(action: str) -> str
+```
+
+**Actions:**
+- `report`: Full consolidation report
+- `stats`: Memory statistics
+- `find_duplicates`: Find potential duplicate memories
+- `find_low_confidence`: Find memories that need verification
+
 ## Scheduled Reminders (Cron)
 
 Use the `exec` tool to create scheduled reminders with `nanobot cron add`:

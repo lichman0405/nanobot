@@ -14,13 +14,11 @@ build/
 *.pyzz
 
 # Runtime data
-workspace/memory/ledger/
-workspace/memory/branches/
-workspace/memory/view/
+workspace/memory/events/
+workspace/memory/commits/
+workspace/memory/branches.json
 workspace/memory/HEAD
 __pycache__/
 
 # Test files
-tests/debug_*.py
-tests/test_*_real.py
-tests/test_memory_e2e.py
+tests/

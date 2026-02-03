@@ -801,5 +801,127 @@ def memory_stats():
     console.print(f"\nStorage: {total_size / 1024:.1f} KB")
 
 
+@memory_app.command("export")
+def memory_export(
+    output: str = typer.Option("memories.json", "--output", "-o", help="Output file path"),
+    format: str = typer.Option("json", "--format", "-f", help="Export format: json, markdown"),
+    include_history: bool = typer.Option(False, "--history", help="Include full commit history"),
+):
+    """Export all memories to a file for backup or review."""
+    import json
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.agent.memory import MemoryStore
+    
+    workspace = get_workspace_path()
+    store = MemoryStore(workspace)
+    
+    # Get current memories
+    memories = store.view.get_all()
+    branches = store.list_branches()
+    current_branch = store.get_current_branch()
+    
+    if format == "json":
+        export_data = {
+            "exported_at": datetime.now().isoformat(),
+            "current_branch": current_branch,
+            "branches": [
+                {
+                    "name": b.name,
+                    "persona": b.persona,
+                    "head": b.head,
+                    "created_at": b.created_at.isoformat() if b.created_at else None,
+                }
+                for b in branches
+            ],
+            "memories": [
+                {
+                    "id": m.id,
+                    "subject": m.subject,
+                    "predicate": m.predicate,
+                    "object": m.object,
+                    "scope": m.scope,
+                    "confidence": m.confidence,
+                    "source": m.source,
+                    "evidence": m.evidence,
+                    "timestamp": m.timestamp.isoformat(),
+                }
+                for m in memories
+            ],
+        }
+        
+        if include_history:
+            history = store.get_history(max_commits=1000)
+            export_data["history"] = [
+                {
+                    "id": c.id,
+                    "message": c.message,
+                    "branch": c.branch,
+                    "events": c.events,
+                    "parent_id": c.parent_id,
+                    "timestamp": c.timestamp.isoformat(),
+                }
+                for c in history
+            ]
+        
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False)
+        
+    elif format == "markdown":
+        lines = [
+            f"# Nanobot Memory Export",
+            f"",
+            f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Current branch: {current_branch}",
+            f"Total memories: {len(memories)}",
+            f"",
+            f"## Branches",
+            f"",
+        ]
+        
+        for b in branches:
+            marker = "→ " if b.name == current_branch else "  "
+            lines.append(f"{marker}**{b.name}**: {b.persona or 'default'}")
+        
+        lines.extend([
+            f"",
+            f"## Memories",
+            f"",
+        ])
+        
+        # Group by subject
+        by_subject: dict[str, list] = {}
+        for m in memories:
+            if m.subject not in by_subject:
+                by_subject[m.subject] = []
+            by_subject[m.subject].append(m)
+        
+        for subject, mems in sorted(by_subject.items()):
+            lines.append(f"### {subject}")
+            lines.append(f"")
+            for m in mems:
+                conf = f"[{m.confidence:.0%}]" if m.confidence < 1.0 else ""
+                lines.append(f"- {m.predicate}: **{m.object}** {conf}")
+            lines.append(f"")
+        
+        if include_history:
+            lines.extend([
+                f"## History",
+                f"",
+            ])
+            history = store.get_history(max_commits=50)
+            for c in history:
+                time_str = c.timestamp.strftime("%Y-%m-%d %H:%M")
+                lines.append(f"- `{c.id[:8]}` {time_str}: {c.message}")
+        
+        with open(output, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+    
+    else:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(1)
+    
+    console.print(f"[green]✓[/green] Exported {len(memories)} memories to {output}")
+
+
 if __name__ == "__main__":
     app()

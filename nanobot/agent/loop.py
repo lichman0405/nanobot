@@ -94,7 +94,7 @@ class AgentLoop:
         spawn_tool = SpawnTool(manager=self.subagents)
         self.tools.register(spawn_tool)
         
-        # Memory tools - allow LLM to actively query/store memories
+        # Memory tools - allow agent to actively manage memories
         from nanobot.agent.tools.memory import register_memory_tools
         register_memory_tools(self.tools, self.context.memory)
     

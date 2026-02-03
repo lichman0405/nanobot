@@ -65,7 +65,22 @@ nanobot features a unique **git-like memory architecture** that provides:
 - **Traceable Memory**: Every piece of learned information is hashed and linked, like git commits
 - **Persona Branches**: Different personalities maintain separate memory timelines
 - **Autonomous Management**: LLM decides what to remember/forget without user intervention
+- **Agent Tools**: 7 tools for the agent to actively manage its own memory
 - **Human-Readable**: JSON storage, Mermaid visualization, CLI commands
+
+**Agent Memory Tools:**
+
+| Tool | Purpose |
+|------|---------|
+| `memory_search` | Search memories by keyword, subject, scope |
+| `memory_add` | Store subject-predicate-object triples |
+| `memory_update` | Modify existing memories |
+| `memory_forget` | Soft-delete with history preservation |
+| `memory_branch` | Manage persona branches |
+| `memory_history` | View commit history |
+| `memory_consolidate` | Periodic maintenance reports |
+
+**CLI Commands:**
 
 ```bash
 # View memory history (like git log)
@@ -79,6 +94,9 @@ nanobot memory graph
 
 # Statistics
 nanobot memory stats
+
+# Export for backup
+nanobot memory export --format markdown
 ```
 
 > See [Memory Architecture](docs/MEMORY_ARCHITECTURE.md) for full documentation.

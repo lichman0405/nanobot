@@ -268,10 +268,85 @@ Return JSON array of events to record.
 - [ ] **Memory compression/summarization** for long histories
 - [ ] **Cross-session memory migration**
 - [ ] **Semantic search with embeddings** (like OpenClaw's LanceDB plugin)
-- [ ] **memory_recall/memory_store tools** for LLM to explicitly query/save
 - [ ] **Memory decay/importance scoring** for automatic pruning
-- [ ] Memory export/import between instances
 - [ ] Memory reflection and self-improvement
+
+## Agent Memory Tools
+
+The agent has access to 7 memory tools for autonomous memory management:
+
+| Tool | Purpose |
+|------|---------|
+| `memory_search` | Search memories by keyword, subject, or scope |
+| `memory_add` | Store new facts as subject-predicate-object triples |
+| `memory_update` | Modify existing memories with full history tracking |
+| `memory_forget` | Soft-delete memories (event recorded, not actually deleted) |
+| `memory_branch` | Create/switch personas, list branches |
+| `memory_history` | View commit history with detailed changes |
+| `memory_consolidate` | Generate consolidation report for heartbeat maintenance |
+
+### Example Tool Usage
+
+```python
+# Search for user preferences
+memory_search(query="preference", scope="permanent")
+
+# Add a new memory
+memory_add(
+    subject="User",
+    predicate="prefers",
+    object="dark mode themes",
+    scope="permanent",
+    confidence=0.9
+)
+
+# Switch to a different persona
+memory_branch(action="switch", name="coding-assistant")
+
+# Run consolidation during heartbeat
+memory_consolidate()
+```
+
+### Heartbeat Integration
+
+The agent automatically runs memory consolidation during heartbeats (every 30 minutes):
+1. Reviews recent conversations
+2. Identifies new facts worth remembering
+3. Checks for outdated memories to update
+4. Cleans up redundant or conflicting entries
+
+See `workspace/HEARTBEAT.md` for the consolidation task template.
+
+## CLI Commands
+
+```bash
+# View commit history
+nanobot memory log
+nanobot memory log --oneline
+
+# List personas/branches
+nanobot memory branches
+
+# Show current memory state
+nanobot memory view
+
+# Generate visualization
+nanobot memory graph
+nanobot memory graph --format timeline
+
+# Switch persona
+nanobot memory checkout coding-assistant
+
+# Create new persona
+nanobot memory create-branch creative-writer --persona "Creative writing helper"
+
+# Statistics
+nanobot memory stats
+
+# Export all memories (for backup or human review)
+nanobot memory export
+nanobot memory export --format markdown --history
+```
 
 ## Comparison with Other Systems
 
@@ -286,6 +361,7 @@ OpenClaw uses a simpler approach:
 - Git-style versioning (rollback, branches)
 - Structured events (subject-predicate-object)
 - Per-message automatic extraction
+- Agent-accessible tools for autonomous management
 
 **OpenClaw advantages**:
 - Human-readable Markdown
@@ -303,6 +379,7 @@ Traditional RAG systems:
 - Full history tracking
 - Branch-based persona isolation
 - Modification/forget semantics
+- Agent autonomy over memory operations
 
 ## Files
 
@@ -319,3 +396,4 @@ Traditional RAG systems:
 | `nanobot/agent/memory/view.py` | MemoryView (materialized state) |
 | `nanobot/agent/memory/controller.py` | LLM-driven MemoryController |
 | `nanobot/agent/memory/visualize.py` | Visualization utilities |
+| `nanobot/agent/tools/memory.py` | 7 agent-facing memory tools |
