@@ -1,0 +1,295 @@
+{
+  "exported_at": "2026-02-03T16:32:56.096330",
+  "current_branch": "project_planner",
+  "branches": [
+    {
+      "name": "main",
+      "persona": "default",
+      "head": "5f813bfdfa259166",
+      "created_at": "2026-02-03T13:44:21.728591"
+    },
+    {
+      "name": "project_planner",
+      "persona": "A specialized project planning and research assistant focused on long-term technical projects. This persona excels at structured project planning, requirements analysis, competitive research, milestone creation, and systematic information organization using memory tools. It maintains project continuity across sessions and provides detailed technical recommendations while following user preferences.",
+      "head": "b82b075b464caae8",
+      "created_at": "2026-02-03T16:31:07.430652"
+    }
+  ],
+  "memories": [
+    {
+      "id": "e9d5269d78a87d56",
+      "subject": "user",
+      "predicate": "name is",
+      "object": "Zhao Ming",
+      "scope": "personal",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: My name is Zhao Ming, 30 years old. I work at ByteDance as a frontend engineer. I like Vue and React.\n    \nAssistant: Hi Zhao Ming! Nice to meet you. As a frontend developer at ByteDance, you must work on interesting projects.",
+      "timestamp": "2026-02-03T14:28:56.834374"
+    },
+    {
+      "id": "7fcb8fdbc762cf3a",
+      "subject": "user",
+      "predicate": "age is",
+      "object": "30",
+      "scope": "personal",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: My name is Zhao Ming, 30 years old. I work at ByteDance as a frontend engineer. I like Vue and React.\n    \nAssistant: Hi Zhao Ming! Nice to meet you. As a frontend developer at ByteDance, you must work on interesting projects.",
+      "timestamp": "2026-02-03T14:28:56.834374"
+    },
+    {
+      "id": "d45757d6ef4519e2",
+      "subject": "user",
+      "predicate": "works as",
+      "object": "frontend engineer",
+      "scope": "work",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: My name is Zhao Ming, 30 years old. I work at ByteDance as a frontend engineer. I like Vue and React.\n    \nAssistant: Hi Zhao Ming! Nice to meet you. As a frontend developer at ByteDance, you must work on interesting projects.",
+      "timestamp": "2026-02-03T14:28:56.835373"
+    },
+    {
+      "id": "4fd5b81467c6a459",
+      "subject": "user",
+      "predicate": "works at",
+      "object": "ByteDance",
+      "scope": "work",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: My name is Zhao Ming, 30 years old. I work at ByteDance as a frontend engineer. I like Vue and React.\n    \nAssistant: Hi Zhao Ming! Nice to meet you. As a frontend developer at ByteDance, you must work on interesting projects.",
+      "timestamp": "2026-02-03T14:28:56.835373"
+    },
+    {
+      "id": "0b7175421a2d8ce2",
+      "subject": "user",
+      "predicate": "prefers frameworks",
+      "object": "Vue and React",
+      "scope": "work/technical",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: My name is Zhao Ming, 30 years old. I work at ByteDance as a frontend engineer. I like Vue and React.\n    \nAssistant: Hi Zhao Ming! Nice to meet you. As a frontend developer at ByteDance, you must work on interesting projects.",
+      "timestamp": "2026-02-03T14:28:56.835373"
+    },
+    {
+      "id": "482816342644ca1b",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "project started",
+      "object": "2026-02-03",
+      "scope": "work",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": "用户要求规划基于AI的个人知识管理系统",
+      "timestamp": "2026-02-03T16:29:25.682374"
+    },
+    {
+      "id": "809653fff5ce768a",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "project goal",
+      "object": "构建一个基于AI的个人知识管理系统，帮助用户高效组织、检索和利用个人知识",
+      "scope": "work",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:29:30.301552"
+    },
+    {
+      "id": "7e03224d9671ea62",
+      "subject": "user",
+      "predicate": "prefers backend",
+      "object": "Python",
+      "scope": "work/technical",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": "用户明确说明偏好Python后端",
+      "timestamp": "2026-02-03T16:29:35.493335"
+    },
+    {
+      "id": "1a41351f84df0b14",
+      "subject": "user",
+      "predicate": "prefers frontend",
+      "object": "React",
+      "scope": "work/technical",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": "用户明确说明偏好React前端",
+      "timestamp": "2026-02-03T16:29:40.575125"
+    },
+    {
+      "id": "0edb6bfcd5939610",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "core features",
+      "object": "1. 智能笔记创建与组织 2. 语义搜索与关联发现 3. AI辅助内容生成 4. 知识图谱可视化 5. 多格式导入导出",
+      "scope": "work",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:29:46.028355"
+    },
+    {
+      "id": "110786a2bccdc3e6",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "tech stack",
+      "object": "前端: React + TypeScript + TailwindCSS; 后端: Python FastAPI; 数据库: PostgreSQL + Redis; AI模型: OpenAI API + 本地嵌入模型",
+      "scope": "work/technical",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:29:51.632726"
+    },
+    {
+      "id": "a1ece107987d08a2",
+      "subject": "competitor:Notion",
+      "predicate": "advantages",
+      "object": "1. 界面美观易用 2. 数据库功能强大 3. 协作功能完善 4. 模板丰富 5. 多平台支持",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:01.700705"
+    },
+    {
+      "id": "1d1ef381e0901932",
+      "subject": "competitor:Notion",
+      "predicate": "disadvantages",
+      "object": "1. 需要联网使用 2. 数据存储在云端 3. AI功能需要付费 4. 本地化支持有限 5. 性能较慢",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:07.079462"
+    },
+    {
+      "id": "36433167c51dae6c",
+      "subject": "competitor:Obsidian",
+      "predicate": "advantages",
+      "object": "1. 纯本地存储 2. 插件生态丰富 3. 双向链接强大 4. 社区活跃 5. 性能优秀",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:12.700421"
+    },
+    {
+      "id": "dddfb132ec3042d3",
+      "subject": "competitor:Obsidian",
+      "predicate": "disadvantages",
+      "object": "1. 学习曲线较陡 2. 界面相对简单 3. 移动端体验一般 4. AI功能需要插件 5. 协作功能有限",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:18.953542"
+    },
+    {
+      "id": "80d613ea0e97e4a1",
+      "subject": "competitor:Roam-Research",
+      "predicate": "advantages",
+      "object": "1. 块级引用强大 2. 每日笔记功能 3. 知识网络可视化 4. 学术研究友好 5. 双向链接原生支持",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:24.777441"
+    },
+    {
+      "id": "db78f96858e74657",
+      "subject": "competitor:Roam-Research",
+      "predicate": "disadvantages",
+      "object": "1. 价格昂贵 2. 需要订阅 3. 数据在云端 4. 学习成本高 5. 移动端功能有限",
+      "scope": "work/research",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:30.250209"
+    },
+    {
+      "id": "514d1f690957ea8b",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "milestone:phase1",
+      "object": "MVP: 基础笔记功能 + 标签系统 + 本地搜索 + 数据导入导出",
+      "scope": "work/planning",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:36.658249"
+    },
+    {
+      "id": "c8f72c69b9abb7f4",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "milestone:phase2",
+      "object": "AI集成: 语义搜索 + 智能标签 + 内容摘要 + 知识关联发现",
+      "scope": "work/planning",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:41.657613"
+    },
+    {
+      "id": "ac91b2d0daba4fd4",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "milestone:phase3",
+      "object": "多平台支持: Web端 + 桌面端 + 移动端 + 浏览器插件 + API接口",
+      "scope": "work/planning",
+      "confidence": 0.9,
+      "source": "agent_tool",
+      "evidence": null,
+      "timestamp": "2026-02-03T16:30:46.754521"
+    },
+    {
+      "id": "7953397b3cf3f898",
+      "subject": "user",
+      "predicate": "has ongoing project",
+      "object": "AI-based personal knowledge management system",
+      "scope": "work/projects",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: 你是我的个人 AI 助手。我需要你帮我完成一个长期项目的规划和研究任务。\n\n**任务：规划一个基于 AI 的个人知识管理系统**\n\n请完成以下步骤：\n\n1. **记录项目启动** - 在你的记忆中创建这个项目的初始记录，包括今天的日期和项目目标\n\n2. **需求分析** - 研究并记录以下内容：\n   - 用户需要什么功能（至少5个核心功能）\n   - 技术栈选择（前端、后端、数据库、AI 模型）\n   - 记住我偏好 Python 后端和 React 前端\n\n3. **竞品分析** - 搜索并记录 3 个类似产品的优缺点：\n   - Notion\n   - Obsidian\n   - Roam Research\n\n4. **里程碑规划** - 创建项目里程碑并存入记忆：\n   - Phase 1: MVP（核心功能）\n   - Phase 2: AI 集成\n   - Phase 3: 多平台支持\n\n5. **总结** - 最后，使用记忆历史功能查看你记录了什么，并整合成一份简要报告\n\n在整个过程中，请主动使用你的记忆工具来存储和组织信息。这是一个持续的项目，我们以后会继续",
+      "timestamp": "2026-02-03T16:31:20.319576"
+    },
+    {
+      "id": "af05842b9b6f51ef",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "has explicit instruction",
+      "object": "use memory tools to store and organize information for this ongoing project",
+      "scope": "work",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: 你是我的个人 AI 助手。我需要你帮我完成一个长期项目的规划和研究任务。\n\n**任务：规划一个基于 AI 的个人知识管理系统**\n\n请完成以下步骤：\n\n1. **记录项目启动** - 在你的记忆中创建这个项目的初始记录，包括今天的日期和项目目标\n\n2. **需求分析** - 研究并记录以下内容：\n   - 用户需要什么功能（至少5个核心功能）\n   - 技术栈选择（前端、后端、数据库、AI 模型）\n   - 记住我偏好 Python 后端和 React 前端\n\n3. **竞品分析** - 搜索并记录 3 个类似产品的优缺点：\n   - Notion\n   - Obsidian\n   - Roam Research\n\n4. **里程碑规划** - 创建项目里程碑并存入记忆：\n   - Phase 1: MVP（核心功能）\n   - Phase 2: AI 集成\n   - Phase 3: 多平台支持\n\n5. **总结** - 最后，使用记忆历史功能查看你记录了什么，并整合成一份简要报告\n\n在整个过程中，请主动使用你的记忆工具来存储和组织信息。这是一个持续的项目，我们以后会继续",
+      "timestamp": "2026-02-03T16:31:20.319576"
+    },
+    {
+      "id": "6369b57f1200e2ff",
+      "subject": "user",
+      "predicate": "stated preference for",
+      "object": "Python backend and React frontend",
+      "scope": "work/technical",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: 你是我的个人 AI 助手。我需要你帮我完成一个长期项目的规划和研究任务。\n\n**任务：规划一个基于 AI 的个人知识管理系统**\n\n请完成以下步骤：\n\n1. **记录项目启动** - 在你的记忆中创建这个项目的初始记录，包括今天的日期和项目目标\n\n2. **需求分析** - 研究并记录以下内容：\n   - 用户需要什么功能（至少5个核心功能）\n   - 技术栈选择（前端、后端、数据库、AI 模型）\n   - 记住我偏好 Python 后端和 React 前端\n\n3. **竞品分析** - 搜索并记录 3 个类似产品的优缺点：\n   - Notion\n   - Obsidian\n   - Roam Research\n\n4. **里程碑规划** - 创建项目里程碑并存入记忆：\n   - Phase 1: MVP（核心功能）\n   - Phase 2: AI 集成\n   - Phase 3: 多平台支持\n\n5. **总结** - 最后，使用记忆历史功能查看你记录了什么，并整合成一份简要报告\n\n在整个过程中，请主动使用你的记忆工具来存储和组织信息。这是一个持续的项目，我们以后会继续",
+      "timestamp": "2026-02-03T16:31:20.320755"
+    },
+    {
+      "id": "946d4f77a73eff82",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "requires",
+      "object": "competitor analysis of Notion, Obsidian, and Roam Research",
+      "scope": "work/research",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: 你是我的个人 AI 助手。我需要你帮我完成一个长期项目的规划和研究任务。\n\n**任务：规划一个基于 AI 的个人知识管理系统**\n\n请完成以下步骤：\n\n1. **记录项目启动** - 在你的记忆中创建这个项目的初始记录，包括今天的日期和项目目标\n\n2. **需求分析** - 研究并记录以下内容：\n   - 用户需要什么功能（至少5个核心功能）\n   - 技术栈选择（前端、后端、数据库、AI 模型）\n   - 记住我偏好 Python 后端和 React 前端\n\n3. **竞品分析** - 搜索并记录 3 个类似产品的优缺点：\n   - Notion\n   - Obsidian\n   - Roam Research\n\n4. **里程碑规划** - 创建项目里程碑并存入记忆：\n   - Phase 1: MVP（核心功能）\n   - Phase 2: AI 集成\n   - Phase 3: 多平台支持\n\n5. **总结** - 最后，使用记忆历史功能查看你记录了什么，并整合成一份简要报告\n\n在整个过程中，请主动使用你的记忆工具来存储和组织信息。这是一个持续的项目，我们以后会继续",
+      "timestamp": "2026-02-03T16:31:20.320755"
+    },
+    {
+      "id": "f48c570ae83b12ea",
+      "subject": "project:ai-knowledge-management",
+      "predicate": "has planned milestones",
+      "object": "Phase 1: MVP, Phase 2: AI Integration, Phase 3: Multi-platform support",
+      "scope": "work/planning",
+      "confidence": 1.0,
+      "source": "agent_inferred",
+      "evidence": "User: 你是我的个人 AI 助手。我需要你帮我完成一个长期项目的规划和研究任务。\n\n**任务：规划一个基于 AI 的个人知识管理系统**\n\n请完成以下步骤：\n\n1. **记录项目启动** - 在你的记忆中创建这个项目的初始记录，包括今天的日期和项目目标\n\n2. **需求分析** - 研究并记录以下内容：\n   - 用户需要什么功能（至少5个核心功能）\n   - 技术栈选择（前端、后端、数据库、AI 模型）\n   - 记住我偏好 Python 后端和 React 前端\n\n3. **竞品分析** - 搜索并记录 3 个类似产品的优缺点：\n   - Notion\n   - Obsidian\n   - Roam Research\n\n4. **里程碑规划** - 创建项目里程碑并存入记忆：\n   - Phase 1: MVP（核心功能）\n   - Phase 2: AI 集成\n   - Phase 3: 多平台支持\n\n5. **总结** - 最后，使用记忆历史功能查看你记录了什么，并整合成一份简要报告\n\n在整个过程中，请主动使用你的记忆工具来存储和组织信息。这是一个持续的项目，我们以后会继续",
+      "timestamp": "2026-02-03T16:31:20.320755"
+    }
+  ]
+}

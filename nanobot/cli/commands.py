@@ -809,6 +809,7 @@ def memory_export(
 ):
     """Export all memories to a file for backup or review."""
     import json
+    from datetime import datetime
     from nanobot.utils.helpers import get_workspace_path
     from nanobot.agent.memory import MemoryStore
     
