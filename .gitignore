@@ -13,3 +13,15 @@ docs/
 *.pyz
 *.pywz
 *.pyzz
+
+# Runtime data
+workspace/memory/ledger/
+workspace/memory/branches/
+workspace/memory/view/
+workspace/memory/HEAD
+__pycache__/
+
+# Test files
+tests/debug_*.py
+tests/test_*_real.py
+tests/test_memory_e2e.py
