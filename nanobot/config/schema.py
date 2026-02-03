@@ -86,7 +86,11 @@ class Config(BaseSettings):
     gateway: GatewayConfig = Field(default_factory=GatewayConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     
-    model_config = {"extra": "ignore"}  # Ignore unknown fields in config.json
+    model_config = {
+        "extra": "ignore",  # Ignore unknown fields in config.json
+        "env_prefix": "NANOBOT_",
+        "env_nested_delimiter": "__",
+    }
     
     @property
     def workspace_path(self) -> Path:
@@ -130,7 +134,3 @@ class Config(BaseSettings):
         if self.providers.vllm.api_base:
             return self.providers.vllm.api_base
         return None
-    
-    class Config:
-        env_prefix = "NANOBOT_"
-        env_nested_delimiter = "__"
