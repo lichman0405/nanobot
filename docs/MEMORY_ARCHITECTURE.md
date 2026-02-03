@@ -2,6 +2,33 @@
 
 > Git-like memory system for traceable, persona-aware, autonomous memory management.
 
+## Quick Overview
+
+```
+User: "I prefer using Python for backend development."
+
+    ↓ Conversation passes through AgentLoop
+
+    ↓ MemoryController extracts facts automatically
+
+┌─────────────────────────────────────────────────────────────┐
+│  MemoryEvent (add)                                          │
+│  subject: "user"                                            │
+│  predicate: "prefers"                                       │
+│  object: "Python for backend"                               │
+│  scope: "work/technical"                                    │
+│  id: "7e03224d..." (SHA256)                                 │
+└─────────────────────────────────────────────────────────────┘
+
+    ↓ Event stored in EventLedger
+
+    ↓ Commit created on current branch
+
+    ↓ MemoryView updated (like git working directory)
+
+Next session: Agent recalls "user prefers Python for backend"
+```
+
 ## Academic Background
 
 This architecture is inspired by the **Git Context Controller (GCC)** paper:
@@ -31,6 +58,45 @@ The GCC paper proposes using Git's data model for LLM memory, addressing key cha
 2. **JSON storage**: We use JSON instead of Git object format for simplicity
 3. **Integrated controller**: Our controller is tightly coupled with the agent loop
 4. **No external Git dependency**: Pure Python implementation
+
+## Real-World Example
+
+Here's an actual interaction demonstrating the memory system:
+
+```bash
+$ nanobot agent -m "Help me plan a new project. I prefer Python backend and React frontend."
+
+# Agent automatically:
+# 1. Calls memory_add to store user preferences
+# 2. Calls memory_add to store project details
+# 3. May create a persona branch for project context
+# 4. Records milestones, research notes, decisions
+
+$ nanobot memory export
+✓ Exported 25 memories to memories.json
+
+$ cat memories.json | jq '.branches'
+[
+  {"name": "main", "head": "5f813bfd..."},
+  {"name": "project_planner", "head": "b82b075b..."}  # Auto-created!
+]
+
+$ cat memories.json | jq '.memories[0]'
+{
+  "subject": "user",
+  "predicate": "prefers backend",
+  "object": "Python",
+  "scope": "work/technical",
+  "confidence": 0.9,
+  "timestamp": "2026-02-03T16:29:35"
+}
+```
+
+The agent:
+- **Autonomously** decided what to remember
+- **Automatically** created a specialized persona branch
+- **Structured** information as subject-predicate-object triples
+- **Persisted** everything to JSON files
 
 ## Overview
 
@@ -184,33 +250,6 @@ conflicts = branch_manager.merge_branch("main", "temporary-project")
 
 # Cherry-pick specific commit
 branch_manager.cherry_pick(commit_id, "target-branch")
-```
-
-## CLI Commands
-
-```bash
-# View commit history
-nanobot memory log
-nanobot memory log --oneline
-
-# List personas/branches
-nanobot memory branches
-
-# Show current memory state
-nanobot memory view
-
-# Generate visualization
-nanobot memory graph
-nanobot memory graph --format timeline
-
-# Switch persona
-nanobot memory checkout coding-assistant
-
-# Create new persona
-nanobot memory create-branch creative-writer --persona "Creative writing helper"
-
-# Statistics
-nanobot memory stats
 ```
 
 ## Visualization

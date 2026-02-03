@@ -20,5 +20,9 @@ workspace/memory/branches.json
 workspace/memory/HEAD
 __pycache__/
 
+# Exported data (may contain personal info)
+memories.json
+memories.md
+
 # Test files
 tests/
