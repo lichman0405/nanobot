@@ -4,24 +4,20 @@ from typing import Any
 
 from nanobot.agent.tools.base import Tool
 from nanobot.usage import UsageTracker
-from nanobot.config.schema import UsageConfig
 
 
 class UsageTool(Tool):
     """
     Tool for querying token usage and cost statistics.
     
-    This allows the agent to be aware of its own resource consumption
-    and make informed decisions about budget management.
+    This allows the agent to be aware of its own resource consumption.
     """
     
     def __init__(
         self,
         tracker: UsageTracker | None = None,
-        config: UsageConfig | None = None,
     ):
         self._tracker = tracker or UsageTracker()
-        self._config = config or UsageConfig()
     
     @property
     def name(self) -> str:
@@ -93,34 +89,6 @@ class UsageTool(Tool):
         lines.append(f"  - Input: {summary.total_prompt_tokens:,}")
         lines.append(f"  - Output: {summary.total_completion_tokens:,}")
         lines.append(f"- **Cost**: ${summary.total_cost_usd:.4f}")
-        
-        # Budget status
-        if self._config.daily_budget_usd > 0 or self._config.monthly_budget_usd > 0:
-            lines.append("")
-            lines.append("### Budget Status")
-            warn_threshold = self._config.warn_at_percent
-            
-            if self._config.daily_budget_usd > 0:
-                today = self._tracker.get_today()
-                daily_pct = (today.total_cost_usd / self._config.daily_budget_usd) * 100
-                status = "⚠️ WARNING" if daily_pct >= warn_threshold else "✅ OK"
-                if daily_pct >= 100:
-                    status = "🚨 EXCEEDED"
-                lines.append(
-                    f"- **Daily**: ${today.total_cost_usd:.4f} / "
-                    f"${self._config.daily_budget_usd:.2f} ({daily_pct:.1f}%) {status}"
-                )
-            
-            if self._config.monthly_budget_usd > 0:
-                monthly_cost = self._tracker.get_monthly_cost()
-                monthly_pct = (monthly_cost / self._config.monthly_budget_usd) * 100
-                status = "⚠️ WARNING" if monthly_pct >= warn_threshold else "✅ OK"
-                if monthly_pct >= 100:
-                    status = "🚨 EXCEEDED"
-                lines.append(
-                    f"- **Monthly**: ${monthly_cost:.4f} / "
-                    f"${self._config.monthly_budget_usd:.2f} ({monthly_pct:.1f}%) {status}"
-                )
         
         # Breakdown by model
         if breakdown in ("model", "both") and summary.by_model:

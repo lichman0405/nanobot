@@ -204,7 +204,6 @@ def gateway(
         max_iterations=config.agents.defaults.max_tool_iterations,
         brave_api_key=config.tools.web.search.api_key or None,
         exec_config=config.tools.exec,
-        usage_config=config.usage,  # Enable budget alerts
     )
     
     # Create cron service
@@ -313,7 +312,6 @@ def agent(
         workspace=config.workspace_path,
         brave_api_key=config.tools.web.search.api_key or None,
         exec_config=config.tools.exec,
-        usage_config=config.usage,  # Enable budget alerts
     )
     
     if message:
@@ -651,59 +649,6 @@ def _format_tokens(n: int) -> str:
     return str(n)
 
 
-def _check_budget_warning(tracker, config) -> None:
-    """Check and display budget warnings if thresholds are exceeded."""
-    usage_config = config.usage
-    
-    # Skip if no budgets configured
-    if usage_config.daily_budget_usd <= 0 and usage_config.monthly_budget_usd <= 0:
-        return
-    
-    warnings = []
-    
-    # Check daily budget
-    if usage_config.daily_budget_usd > 0:
-        today = tracker.get_today()
-        daily_pct = (today.total_cost_usd / usage_config.daily_budget_usd) * 100
-        
-        if daily_pct >= 100:
-            warnings.append(
-                f"[red bold]⚠ DAILY BUDGET EXCEEDED![/red bold] "
-                f"${today.total_cost_usd:.4f} / ${usage_config.daily_budget_usd:.4f} "
-                f"({daily_pct:.1f}%)"
-            )
-        elif daily_pct >= usage_config.warn_at_percent:
-            warnings.append(
-                f"[yellow]⚠ Daily budget warning:[/yellow] "
-                f"${today.total_cost_usd:.4f} / ${usage_config.daily_budget_usd:.4f} "
-                f"({daily_pct:.1f}%)"
-            )
-    
-    # Check monthly budget
-    if usage_config.monthly_budget_usd > 0:
-        monthly_cost = tracker.get_monthly_cost()
-        monthly_pct = (monthly_cost / usage_config.monthly_budget_usd) * 100
-        
-        if monthly_pct >= 100:
-            warnings.append(
-                f"[red bold]⚠ MONTHLY BUDGET EXCEEDED![/red bold] "
-                f"${monthly_cost:.4f} / ${usage_config.monthly_budget_usd:.2f} "
-                f"({monthly_pct:.1f}%)"
-            )
-        elif monthly_pct >= usage_config.warn_at_percent:
-            warnings.append(
-                f"[yellow]⚠ Monthly budget warning:[/yellow] "
-                f"${monthly_cost:.4f} / ${usage_config.monthly_budget_usd:.2f} "
-                f"({monthly_pct:.1f}%)"
-            )
-    
-    # Display warnings
-    if warnings:
-        console.print()
-        for w in warnings:
-            console.print(w)
-
-
 def _print_grouped_table(
     title: str,
     grouped_stats: dict,
@@ -839,9 +784,6 @@ def _print_usage_summary(tracker, days: int, config, by_model: bool = False, by_
             )
         
         console.print(table)
-    
-    # Check budget warnings
-    _check_budget_warning(tracker, config)
 
 
 # ============================================================================

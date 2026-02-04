@@ -1,7 +1,7 @@
 """Configuration schema using Pydantic."""
 
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
 
@@ -62,29 +62,6 @@ class GatewayConfig(BaseModel):
     port: int = 18790
 
 
-class UsageConfig(BaseModel):
-    """Usage tracking and budget configuration."""
-    daily_budget_usd: float = 0.0  # Daily budget limit (0 = no limit)
-    monthly_budget_usd: float = 0.0  # Monthly budget limit (0 = no limit)
-    warn_at_percent: int = 80  # Warn when usage reaches this percentage
-
-    @field_validator("daily_budget_usd", "monthly_budget_usd")
-    @classmethod
-    def validate_budget(cls, v: float) -> float:
-        """Validate budget values are non-negative."""
-        if v < 0:
-            raise ValueError("Budget must be non-negative")
-        return v
-
-    @field_validator("warn_at_percent")
-    @classmethod
-    def validate_warn_percent(cls, v: int) -> int:
-        """Validate warn_at_percent is between 1 and 100."""
-        if not 1 <= v <= 100:
-            raise ValueError("warn_at_percent must be between 1 and 100")
-        return v
-
-
 class WebSearchConfig(BaseModel):
     """Web search tool configuration."""
     api_key: str = ""  # Brave Search API key
@@ -115,7 +92,6 @@ class Config(BaseSettings):
     providers: ProvidersConfig = Field(default_factory=ProvidersConfig)
     gateway: GatewayConfig = Field(default_factory=GatewayConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
-    usage: UsageConfig = Field(default_factory=UsageConfig)
     
     @property
     def workspace_path(self) -> Path:

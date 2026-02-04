@@ -20,8 +20,7 @@ from nanobot.agent.tools.spawn import SpawnTool
 from nanobot.agent.tools.usage import UsageTool
 from nanobot.agent.subagent import SubagentManager
 from nanobot.session.manager import SessionManager
-from nanobot.usage import UsageTracker, BudgetMonitor
-from nanobot.config.schema import UsageConfig
+from nanobot.usage import UsageTracker
 
 
 class AgentLoop:
@@ -45,7 +44,6 @@ class AgentLoop:
         max_iterations: int = 20,
         brave_api_key: str | None = None,
         exec_config: "ExecToolConfig | None" = None,
-        usage_config: UsageConfig | None = None,
     ):
         from nanobot.config.schema import ExecToolConfig
         self.bus = bus
@@ -60,12 +58,6 @@ class AgentLoop:
         self.sessions = SessionManager(workspace)
         self.tools = ToolRegistry()
         self.tracker = UsageTracker()  # Token usage tracking
-        
-        # Budget monitor for automatic alerts
-        self.budget_monitor = BudgetMonitor(
-            tracker=self.tracker,
-            config=usage_config or UsageConfig(),
-        )
         
         self.subagents = SubagentManager(
             provider=provider,
@@ -147,28 +139,6 @@ class AgentLoop:
         self._running = False
         logger.info("Agent loop stopping")
     
-    async def _check_budget_alert(self, channel: str, chat_id: str) -> None:
-        """
-        Check budget thresholds and send alert if exceeded.
-        
-        This is called after each LLM API call to proactively notify
-        the user when they're approaching or exceeding their budget.
-        """
-        alert = self.budget_monitor.check_budgets()
-        
-        if alert:
-            # Send alert message to the user
-            alert_msg = OutboundMessage(
-                channel=channel,
-                chat_id=chat_id,
-                content=alert.format_message(),
-            )
-            try:
-                await self.bus.publish_outbound(alert_msg)
-                logger.info(f"Budget alert sent: {alert.alert_type}")
-            except Exception as e:
-                logger.error(f"Failed to send budget alert: {e}")
-    
     async def _process_message(self, msg: InboundMessage) -> OutboundMessage | None:
         """
         Process a single inbound message.
@@ -228,9 +198,6 @@ class AgentLoop:
                     channel=msg.channel,
                     session_key=msg.session_key,
                 )
-                
-                # Check budget and send alert if needed
-                await self._check_budget_alert(msg.channel, msg.chat_id)
             
             # Handle tool calls
             if response.has_tool_calls:
