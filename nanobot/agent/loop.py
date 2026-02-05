@@ -436,6 +436,15 @@ class AgentLoop:
         Returns:
             The agent's response.
         """
+        msg = InboundMessage(
+            channel="cli",
+            sender_id="user",
+            chat_id="direct",
+            content=content
+        )
+        
+        response = await self._process_message(msg)
+        return response.content if response else ""
     
     async def _auto_extract_memories(self, session: "Session") -> None:
         """
@@ -508,12 +517,3 @@ class AgentLoop:
             
         except Exception as e:
             logger.error(f"Auto memory extraction failed: {e}")
-        msg = InboundMessage(
-            channel="cli",
-            sender_id="user",
-            chat_id="direct",
-            content=content
-        )
-        
-        response = await self._process_message(msg)
-        return response.content if response else ""

@@ -218,25 +218,29 @@ class OllamaWebSearchTool(Tool):
             # Use ollama client's web_search method
             results_data = await asyncio.to_thread(
                 self.client.web_search,
-                query=query
+                query
             )
             
-            # Parse results
-            results = results_data.get("results", [])
+            # Parse results (results_data.results is a list of WebSearchResult objects)
+            results = results_data.results if hasattr(results_data, 'results') else []
             if not results:
                 return f"No results found for: {query}"
             
             # Format output to match WebSearchTool format
             lines = [f"Results for: {query}\n"]
             for i, item in enumerate(results[:n], 1):
-                title = item.get("title", "")
-                url = item.get("url", "")
-                content = item.get("content", "")
+                # Access attributes directly (not dict keys)
+                title = item.title if hasattr(item, 'title') else ""
+                url = item.url if hasattr(item, 'url') else ""
+                content = item.content if hasattr(item, 'content') else ""
                 
                 lines.append(f"{i}. {title}")
                 lines.append(f"   {url}")
                 if content:
-                    lines.append(f"   {content}")
+                    # Truncate very long content snippets
+                    content_preview = content[:500] + "..." if len(content) > 500 else content
+                    lines.append(f"   {content_preview}")
+                lines.append("")  # Empty line between results
             
             return "\n".join(lines)
         except Exception as e:
