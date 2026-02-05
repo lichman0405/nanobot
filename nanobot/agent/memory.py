@@ -419,6 +419,70 @@ class MemoryStore:
     
     # ========== Mem0-Inspired Lifecycle Management ==========
     
+    def _append_to_section(self, content: str, section_name: str, new_items: list[str]) -> str:
+        """
+        Append items to an existing section, or create section if not exists.
+        
+        Args:
+            content: The full MEMORY.md content.
+            section_name: Section header (without ##).
+            new_items: List of items to append (will be prefixed with "- ").
+        
+        Returns:
+            Updated content with items appended to the correct section.
+        """
+        if not new_items:
+            return content
+        
+        new_lines = "\n".join([f"- {item}" for item in new_items])
+        
+        # Find existing section (## Section_Name or ## Section_Name (date))
+        section_pattern = rf"(## {re.escape(section_name)}(?:\s*\([^)]*\))?\n)"
+        match = re.search(section_pattern, content, re.IGNORECASE)
+        
+        if match:
+            # Find the end of this section (next ## or end of file)
+            section_start = match.end()
+            next_section = re.search(r"\n## ", content[section_start:])
+            
+            if next_section:
+                # Insert before next section
+                insert_pos = section_start + next_section.start()
+                return content[:insert_pos] + new_lines + "\n" + content[insert_pos:]
+            else:
+                # Append at end
+                return content.rstrip() + "\n" + new_lines
+        else:
+            # Create new section at end
+            section_header = f"\n\n## {section_name}\n"
+            return content.rstrip() + section_header + new_lines
+    
+    def _replace_in_section(self, content: str, old_fact: str, new_fact: str) -> str:
+        """
+        Replace an old fact with a new one in MEMORY.md.
+        
+        Args:
+            content: The full MEMORY.md content.
+            old_fact: The fact to replace (without "- " prefix).
+            new_fact: The new fact to insert.
+        
+        Returns:
+            Updated content with the fact replaced.
+        """
+        # Try to find and replace the line
+        old_line_pattern = rf"^- {re.escape(old_fact)}$"
+        new_line = f"- {new_fact}"
+        
+        updated = re.sub(old_line_pattern, new_line, content, flags=re.MULTILINE)
+        if updated == content:
+            # If exact match failed, try fuzzy match (first 50 chars)
+            if len(old_fact) > 50:
+                partial = old_fact[:50]
+                old_line_pattern = rf"^- {re.escape(partial)}[^\n]*$"
+                updated = re.sub(old_line_pattern, new_line, content, flags=re.MULTILINE)
+        
+        return updated
+    
     async def lifecycle_update(
         self,
         new_facts: list[str],
@@ -442,26 +506,28 @@ class MemoryStore:
             return {"add": [], "update": [], "delete": [], "noop": []}
         
         # Check if lifecycle is enabled
-        if self._config and hasattr(self._config, 'memory'):
-            if not getattr(self._config.memory, 'enable_lifecycle', True):
+        if self._config and hasattr(self._config, 'enable_lifecycle'):
+            if not self._config.enable_lifecycle:
                 # Fallback to simple append
                 return {"add": new_facts, "update": [], "delete": [], "noop": []}
         
         existing_content = self.read_long_term()
         
+        logger.debug(f"Lifecycle: existing={len(existing_content) if existing_content else 0} bytes, llm={self._llm is not None}")
+        
         if not existing_content or not self._llm:
             # No existing content or no LLM - just add all
             logger.info("No existing memory or LLM unavailable, adding all facts")
             
-            # Still write the facts to long-term memory
+            # Use smart section append
             if new_facts:
-                section_header = f"\n\n## {category.title()} ({today_date()})\n"
-                new_content = "\n".join([f"- {fact}" for fact in new_facts])
-                
                 if existing_content:
-                    self.write_long_term(existing_content + section_header + new_content)
+                    updated = self._append_to_section(existing_content, category.title(), new_facts)
                 else:
-                    self.write_long_term(section_header.lstrip() + new_content)
+                    # Create initial structure
+                    updated = f"# Long-term Memory\n\n## {category.title()}\n"
+                    updated += "\n".join([f"- {fact}" for fact in new_facts])
+                self.write_long_term(updated)
             
             return {"add": new_facts, "update": [], "delete": [], "noop": []}
         
@@ -503,6 +569,7 @@ class MemoryStore:
                 return {"add": new_facts, "update": [], "delete": [], "noop": []}
             
             # Parse LLM response
+            logger.debug(f"Lifecycle LLM response: {response.content[:500]}")
             result = {"add": [], "update": [], "delete": [], "noop": []}
             
             for line in response.content.split('\n'):
@@ -536,26 +603,33 @@ class MemoryStore:
                     if fact_to_delete:
                         result["delete"].append(fact_to_delete)
             
+            # If parsing didn't match anything, default to ADD all facts
+            total_parsed = sum(len(v) for v in result.values())
+            if total_parsed == 0:
+                logger.warning(f"Lifecycle parsing found no matches, defaulting to ADD")
+                result["add"] = new_facts
+            
             # Apply the changes
             if result["add"] or result["update"] or result["delete"]:
                 updated_content = existing_content
                 
-                # Delete contradictions
+                # Delete contradictions (remove entire lines)
                 for fact in result["delete"]:
-                    # Remove the fact from memory (simple line removal)
-                    updated_content = updated_content.replace(fact, "")
+                    # Remove the line containing this fact
+                    pattern = rf"^- [^\n]*{re.escape(fact[:30])}[^\n]*\n?"
+                    updated_content = re.sub(pattern, "", updated_content, flags=re.MULTILINE | re.IGNORECASE)
                 
-                # Add new facts
+                # Add new facts to category section
                 if result["add"]:
-                    section_header = f"\n\n## {category.title()} ({today_date()})\n"
-                    new_content = "\n".join([f"- {fact}" for fact in result["add"]])
-                    updated_content += section_header + new_content
+                    updated_content = self._append_to_section(updated_content, category.title(), result["add"])
                 
-                # Update facts (for now, treat as additions with context)
+                # Update facts: replace old with new in same section
+                # For updates, we append to the category (since we don't know which fact to replace)
                 if result["update"]:
-                    section_header = f"\n\n## Updates ({today_date()})\n"
-                    update_content = "\n".join([f"- {fact}" for fact in result["update"]])
-                    updated_content += section_header + update_content
+                    updated_content = self._append_to_section(updated_content, category.title(), result["update"])
+                
+                # Clean up empty lines
+                updated_content = re.sub(r"\n{3,}", "\n\n", updated_content)
                 
                 # Write back
                 self.write_long_term(updated_content)

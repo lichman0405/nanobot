@@ -308,9 +308,30 @@ class AgentLoop:
             )
             logger.info(f"Tools used: {tool_summary}")
         
-        # Auto-extract memories if enabled
+        # Auto-extract memories if enabled (respect extract_trigger config)
         if self.memory_config.auto_extract:
-            await self._auto_extract_memories(session)
+            trigger = getattr(self.memory_config, 'extract_trigger', 'every_message')
+            should_extract = False
+            
+            if trigger == "every_message":
+                should_extract = True
+            elif trigger == "turn_count":
+                # Extract every 3 turns (6 messages)
+                history_len = len(session.get_history())
+                if history_len > 0 and history_len % 6 == 0:
+                    should_extract = True
+            elif trigger == "end_of_conversation":
+                # This would need session timeout detection
+                # For now, extract less frequently (every 5 turns)
+                history_len = len(session.get_history())
+                if history_len > 0 and history_len % 10 == 0:
+                    should_extract = True
+            else:
+                # Default to every message for unknown triggers
+                should_extract = True
+            
+            if should_extract:
+                await self._auto_extract_memories(session)
         
         # Save to session
         session.add_message("user", msg.content)
@@ -453,13 +474,15 @@ class AgentLoop:
         """
         Automatically extract and save important memories from the conversation.
         
-        This runs after each conversation turn if auto_extract is enabled.
-        Uses smart extraction and Mem0-inspired lifecycle management to
-        avoid duplicates and contradictions.
+        Implements dual-track storage:
+        1. Daily notes (YYYY-MM-DD.md): Raw timestamped records
+        2. Knowledge base (MEMORY.md): Structured, deduplicated facts
         
         Args:
             session: The conversation session to extract from.
         """
+        from datetime import datetime
+        
         try:
             # Get recent conversation history (last 6 messages)
             history = session.get_history()
@@ -486,12 +509,25 @@ class AgentLoop:
             if self.memory_config.smart_dedupe:
                 facts = await self.memory.smart_dedupe(facts)
             
-            # Use lifecycle management if enabled
+            if not facts:
+                return
+            
+            # ========== DUAL-TRACK STORAGE ==========
+            
+            # Track 1: Always write to daily notes (raw record with timestamp)
+            timestamp = datetime.now().strftime("%H:%M")
+            for fact in facts:
+                entry = f"- [{timestamp}] {fact}"
+                self.memory.append_today(entry)
+            
+            logger.debug(f"Wrote {len(facts)} facts to daily notes")
+            
+            # Track 2: Update knowledge base with lifecycle management
             if self.memory_config.enable_lifecycle and hasattr(self.memory, 'lifecycle_update'):
                 try:
                     result = await self.memory.lifecycle_update(
                         new_facts=facts,
-                        category="auto_extracted"
+                        category="General"  # Will append to existing ## General section
                     )
                     
                     # Log lifecycle actions
@@ -501,22 +537,14 @@ class AgentLoop:
                     skipped = len(result.get("noop", []))
                     
                     logger.info(
-                        f"Memory lifecycle: {added} added, {updated} updated, "
-                        f"{deleted} deleted, {skipped} skipped"
+                        f"Memory: {len(facts)} to daily, lifecycle: "
+                        f"{added} add, {updated} update, {deleted} delete, {skipped} skip"
                     )
-                    return
                     
                 except Exception as e:
-                    logger.warning(f"Lifecycle update failed, falling back to simple append: {e}")
-            
-            # Fallback: save facts to daily notes
-            for fact in facts:
-                from datetime import datetime
-                timestamp = datetime.now().strftime("%H:%M")
-                entry = f"- [{timestamp}] 🤖 Auto-extracted: {fact}"
-                self.memory.append_today(entry)
-            
-            logger.info(f"Auto-extracted {len(facts)} memory facts")
+                    logger.warning(f"Lifecycle update failed: {e}")
+            else:
+                logger.info(f"Auto-extracted {len(facts)} facts to daily notes")
             
         except Exception as e:
             logger.error(f"Auto memory extraction failed: {e}")

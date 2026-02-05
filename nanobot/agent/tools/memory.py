@@ -60,54 +60,52 @@ class RememberTool(Tool):
         **kwargs: Any
     ) -> str:
         """
-        Save a fact to memory using Mem0-inspired lifecycle management.
-        
-        The fact will be analyzed and either:
-        - ADD: Added as new information
-        - UPDATE: Merged with existing similar information
-        - DELETE: Replace contradicting information
-        - NOOP: Skipped if duplicate
+        Save a fact to memory using dual-track storage:
+        1. Daily notes (YYYY-MM-DD.md): Raw timestamped record
+        2. Knowledge base (MEMORY.md): Structured, deduplicated via lifecycle
         """
         from datetime import datetime
         
-        # Use lifecycle management if available
+        timestamp = datetime.now().strftime("%H:%M")
+        cat = category or "general"
+        
+        # ========== TRACK 1: Always write to daily notes ==========
+        entry_parts = [f"- [{timestamp}]"]
+        if importance:
+            importance_emoji = {"low": "ℹ️", "medium": "⭐", "high": "🔥"}
+            entry_parts.append(importance_emoji.get(importance, ""))
+        if category:
+            entry_parts.append(f"`{category}`")
+        entry_parts.append(fact)
+        entry = " ".join(entry_parts)
+        self._memory.append_today(entry)
+        
+        # ========== TRACK 2: Update knowledge base with lifecycle ==========
         if hasattr(self._memory, 'lifecycle_update'):
             try:
                 result = await self._memory.lifecycle_update(
                     new_facts=[fact],
-                    category=category or "general"
+                    category=cat.title()
                 )
                 
                 # Build response based on lifecycle action
+                fact_preview = f"{fact[:50]}{'...' if len(fact) > 50 else ''}"
                 if result["add"]:
-                    return f"✓ Added to memory: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                    return f"✓ Added to memory: {fact_preview}"
                 elif result["update"]:
-                    return f"✓ Updated memory: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                    return f"✓ Updated memory: {fact_preview}"
                 elif result["delete"]:
-                    return f"✓ Replaced old info with: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                    return f"✓ Replaced old info: {fact_preview}"
                 elif result["noop"]:
-                    return f"ℹ️ Already known: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                    return f"ℹ️ Already known: {fact_preview}"
+                else:
+                    return f"✓ Remembered: {fact_preview}"
                 
             except Exception as e:
-                # Fallback to simple append if lifecycle fails
-                pass
+                # Lifecycle failed but daily note was written
+                return f"✓ Saved to daily notes: {fact[:50]}{'...' if len(fact) > 50 else ''}"
         
-        # Fallback: simple append to daily notes
-        timestamp = datetime.now().strftime("%H:%M")
-        entry_parts = [f"- [{timestamp}]"]
-        
-        if importance:
-            importance_emoji = {"low": "ℹ️", "medium": "⭐", "high": "🔥"}
-            entry_parts.append(importance_emoji.get(importance, ""))
-        
-        if category:
-            entry_parts.append(f"`{category}`")
-        
-        entry_parts.append(fact)
-        entry = " ".join(entry_parts)
-        
-        # Append to today's notes
-        self._memory.append_today(entry)
+        return f"✓ Remembered: {fact[:50]}{'...' if len(fact) > 50 else ''}"
         
         return f"✓ Remembered: {fact[:50]}{'...' if len(fact) > 50 else ''}"
 
