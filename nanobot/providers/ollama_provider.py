@@ -121,8 +121,7 @@ class OllamaProvider(LLMProvider):
         
         try:
             # Use synchronous chat for now (ollama SDK doesn't have async)
-            # In a production system, you might want to wrap this in asyncio.to_thread
-            import asyncio
+            # Wrap in asyncio.to_thread to avoid blocking
             response = await asyncio.to_thread(
                 self.client.chat,
                 **kwargs
@@ -140,7 +139,6 @@ class OllamaProvider(LLMProvider):
         Preprocess messages to convert tool_call arguments from JSON strings to dicts.
         Ollama SDK expects arguments as dict objects, not JSON strings.
         """
-        import json
         processed = []
         
         for msg in messages:
@@ -169,8 +167,6 @@ class OllamaProvider(LLMProvider):
     
     def _parse_response(self, response: Any, model: str) -> LLMResponse:
         """Parse Ollama response into our standard format."""
-        import json
-        
         message = response.get("message", {})
         
         # Extract content

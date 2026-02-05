@@ -142,8 +142,10 @@ class UsageTracker:
         # Store record
         self._records.append(record)
         
-        # Persist to disk
-        self._save()
+        # Persist to disk periodically to reduce I/O overhead
+        # Save every 10 records or when total is divisible by 10
+        if len(self._records) % 10 == 0:
+            self._save()
         
         logger.debug(
             f"Tracked usage: {session_key} | {model} | "

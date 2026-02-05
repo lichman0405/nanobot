@@ -83,6 +83,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added explicit `mode` field to distinguish between local and cloud usage
   - Separate settings for `base_url` (local) and `api_key` (cloud)
   - Better validation and error messages for missing cloud API key
+- **Performance**: Optimized usage tracker to batch writes (every 10 records)
+  - Reduces I/O overhead in high-throughput scenarios
+  - Previous behavior: write on every single track() call
+- **Code Quality**: Fixed import statements organization
+  - Moved `asyncio`, `json` imports to file top level
+  - Added missing `logger` import in web.py
+- **Configuration Display**: Fixed Ollama status check in `config show` command
+  - Now correctly checks `enabled` flag instead of `api_base`
+- **Model Selection**: Fixed default model logic for Ollama provider
+  - Respects user's configured model in `agents.defaults.model`
+  - Only falls back to `ollama.default_model` if not set
 
 ### Removed
 - **`nanobot config setup-ollama`** - Merged into `setup-provider` for better organization

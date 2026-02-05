@@ -185,7 +185,7 @@ ollama pull qwen3:4b
     "ollama": {
       "enabled": true,
       "mode": "local",
-      "base_url": "http://localhost:11434"
+      "baseUrl": "http://localhost:11434"
     }
   },
   "agents": {
@@ -203,7 +203,7 @@ ollama pull qwen3:4b
     "ollama": {
       "enabled": true,
       "mode": "cloud",
-      "api_key": "YOUR_OLLAMA_CLOUD_API_KEY"
+      "apiKey": "YOUR_OLLAMA_CLOUD_API_KEY"
     }
   },
   "agents": {
@@ -213,9 +213,9 @@ ollama pull qwen3:4b
   },
   "tools": {
     "web": {
-      "ollama_search": {
+      "ollamaSearch": {
         "enabled": true,
-        "api_key": "YOUR_OLLAMA_CLOUD_API_KEY"
+        "apiKey": "YOUR_OLLAMA_CLOUD_API_KEY"
       }
     }
   }
@@ -351,7 +351,7 @@ Config file: `~/.nanobot/config.json`
     "ollama": {
       "enabled": true,
       "mode": "local",
-      "base_url": "http://localhost:11434"
+      "baseUrl": "http://localhost:11434"
     }
   },
   "channels": {
@@ -369,13 +369,13 @@ Config file: `~/.nanobot/config.json`
       "search": {
         "apiKey": "BSA..."
       },
-      "ollama_search": {
+      "ollamaSearch": {
         "enabled": false,
-        "api_key": ""
+        "apiKey": ""
       }
     }
   },
-  "usage_alert": {
+  "usageAlert": {
     "enabled": false,
     "dailyLimit": 1000000,
     "sessionLimit": 100000

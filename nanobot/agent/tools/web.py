@@ -214,7 +214,6 @@ class OllamaWebSearchTool(Tool):
             n = min(max(max_results or self.max_results, 1), 10)
             
             # Use ollama client's web_search method
-            import asyncio
             results_data = await asyncio.to_thread(
                 self.client.web_search,
                 query=query

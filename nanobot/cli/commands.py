@@ -194,7 +194,7 @@ def gateway(
             mode=config.providers.ollama.mode,
             api_key=config.providers.ollama.api_key,
             base_url=config.providers.ollama.base_url,
-            default_model=model if "ollama" in model.lower() else config.providers.ollama.default_model,
+            default_model=config.agents.defaults.model or config.providers.ollama.default_model,
         )
         console.print(f"[green]✓[/green] Using Ollama provider ({config.providers.ollama.mode} mode)")
     else:
@@ -733,7 +733,7 @@ def config_show():
         "OpenAI": bool(config.providers.openai.api_key),
         "Groq": bool(config.providers.groq.api_key),
         "Gemini": bool(config.providers.gemini.api_key),
-        "Ollama": bool(config.providers.ollama.api_key or config.providers.ollama.api_base),
+        "Ollama": bool(config.providers.ollama.enabled),
         "vLLM": bool(config.providers.vllm.api_base),
     }
     for name, configured in providers.items():
