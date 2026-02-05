@@ -63,7 +63,12 @@
 
 nanobot features an **intelligent long-term memory system** inspired by [Mem0](https://github.com/mem0ai/mem0) — **without** requiring vector databases:
 
-- **🔄 Lifecycle Management**: Automatically handles ADD/UPDATE/DELETE/NOOP operations for facts
+- **� Dual-Track Storage**: Maintains both conversation history and structured knowledge
+  - **Daily Notes** (`memory/YYYY-MM-DD.md`): Timestamped raw records of what was learned when
+  - **Knowledge Base** (`memory/MEMORY.md`): Deduplicated facts organized by categories
+  - Both tracks updated automatically via `remember` tool and auto-extraction
+
+- **🔄 Lifecycle Management**: Intelligently handles ADD/UPDATE/DELETE/NOOP operations
   - Detects contradictions and updates existing memories intelligently
   - Prevents duplicate storage for known information
   - LLM-powered classification with keyword fallback
@@ -71,7 +76,18 @@ nanobot features an **intelligent long-term memory system** inspired by [Mem0](h
 - **⚡ JIT (Just-In-Time) Retrieval**: Dynamically loads relevant memories on demand
   - **Keyword-based**: TF-IDF-inspired scoring for semantic relevance
   - **Date-based**: Filter memories by time period
-  - **Category-based**: Organize by topics (personal, work, preferences, etc.)
+  - **Category-based**: Organize by topics (User_Info, Project, Preferences, etc.)
+
+- **🛠️ CLI Commands**: Full control over your memory system
+  ```bash
+  nanobot memory show               # View recent memories
+  nanobot memory show --long-term   # View knowledge base
+  nanobot memory show --date 2026-02-05  # View specific date
+  nanobot memory search "keyword"   # Search across all memories
+  nanobot memory add "fact" -c preferences  # Manually add memory
+  nanobot memory stats              # View statistics
+  nanobot memory clear --days 30    # Clean old memories
+  ```
 
 - **🔒 Security**: Built-in protections for safe memory operations
   - Path traversal prevention
@@ -82,12 +98,11 @@ nanobot features an **intelligent long-term memory system** inspired by [Mem0](h
 ```json
 {
   "memory": {
-    "enabled": true,
     "autoExtract": true,
     "enableLifecycle": true,
+    "extractTrigger": "every_message",
     "jitRetrieval": true,
     "jitMethod": "keyword",
-    "jitMaxResults": 20,
     "maxContentSize": 8192
   }
 }

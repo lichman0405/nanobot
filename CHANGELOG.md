@@ -68,12 +68,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic merging of related facts
   - Contradiction detection and removal
   
+- **Dual-Track Storage Architecture** (Fixed)
+  - **Daily Notes** (`memory/YYYY-MM-DD.md`): Raw timestamped conversation records
+  - **Knowledge Base** (`memory/MEMORY.md`): Structured, deduplicated facts organized by categories
+  - Both `remember` tool and auto-extraction now write to both tracks
+  - Daily notes provide conversation history, knowledge base provides quick reference
+  
+- **Smart Section Management** (Fixed)
+  - `_append_to_section()` method intelligently finds and appends to existing category sections
+  - Prevents duplicate section headers (e.g., multiple "## User_Info (2026-02-05)")
+  - Categories now organized cleanly: User_Info, Project, Preferences, etc.
+  - UPDATE operations properly append to category sections instead of creating new ones
+  
 - **JIT (Just-In-Time) Retrieval**
   - Dynamic memory loading based on current query
   - Three retrieval methods: keyword, date, category
   - TF-IDF-inspired scoring for relevance ranking
   - Faster context building (loads only relevant memories)
   - Reduced token usage compared to loading all memories
+  
+- **Memory CLI Commands** (Enhanced)
+  - `nanobot memory show` - View memories
+    - `--days N` - Show last N days (default: 7)
+    - `--long-term` - Show knowledge base (MEMORY.md)
+    - `--date YYYY-MM-DD` - Show specific date (new)
+  - `nanobot memory search <query>` - Search through all memories
+    - Fixed: Now supports Chinese and other multi-byte characters
+    - Uses substring matching instead of word splitting
+  - `nanobot memory stats` - Show statistics
+    - Fixed: Separately shows daily entries vs knowledge base entries
+    - Displays total entry count, file count, and date range
+  - `nanobot memory add <fact>` - Manually add memory (new)
+    - `--category` - Specify category (default: general)
+    - `--importance` - Set importance: low/medium/high
+    - Automatically writes to both daily notes and knowledge base
+  - `nanobot memory clear` - Clean up old memories (new)
+    - `--days N` - Delete memories older than N days
+    - `--all` - Delete all memories (with confirmation)
+  - `nanobot memory consolidate` - Weekly memory consolidation
+    - `--force` - Force consolidation regardless of schedule
+  
+- **Extract Trigger Configuration** (Fixed)
+  - Now respects `extract_trigger` config setting
+  - Supports: `every_message`, `turn_count`, `end_of_conversation`
+  - Previously ignored and always extracted on every message
   
 - **Security Enhancements**
   - Path validation to prevent traversal attacks
@@ -82,9 +120,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configurable max content size (default: 8KB)
   
 - **Enhanced Memory Tools**
-  - `remember` tool now uses lifecycle management
+  - `remember` tool now uses dual-track storage + lifecycle management
   - `recall` tool supports JIT retrieval
-  - Auto-extraction integrated with lifecycle
+  - Auto-extraction integrated with lifecycle and respects triggers
   
 - **Additional Configuration Options**
   - `enable_lifecycle` - Toggle Mem0-style management
