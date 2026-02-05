@@ -404,6 +404,11 @@ Config file: `~/.nanobot/config.json`
 | `nanobot usage --session <id>` | View usage for specific session |
 | `nanobot usage --today/--week` | View recent usage |
 | `nanobot usage --export stats.json` | Export usage data |
+| `nanobot memory show` | Show recent memories |
+| `nanobot memory show --long-term` | Show long-term memory |
+| `nanobot memory search <query>` | Search through memories |
+| `nanobot memory stats` | Show memory statistics |
+| `nanobot memory consolidate` | Manually consolidate memories |
 
 <details>
 <summary><b>Scheduled Tasks (Cron)</b></summary>
@@ -476,8 +481,8 @@ PRs welcome! The codebase is intentionally small and readable. 🤗
 **Roadmap** — Pick an item and [open a PR](https://github.com/HKUDS/nanobot/pulls)!
 
 - [x] **Voice Transcription** — Support for Groq Whisper (Issue #13)
+- [x] **Long-term memory** — Smart memory extraction with auto-consolidation
 - [ ] **Multi-modal** — See and hear (images, voice, video)
-- [ ] **Long-term memory** — Never forget important context
 - [ ] **Better reasoning** — Multi-step planning and reflection
 - [ ] **More integrations** — Discord, Slack, email, calendar
 - [ ] **Self-improvement** — Learn from feedback and mistakes

@@ -109,6 +109,28 @@ class UsageAlertConfig(BaseModel):
     session_limit: int = 100000  # Per-session token limit
 
 
+class MemoryConfig(BaseModel):
+    """Long-term memory system configuration."""
+    
+    # Auto-extraction
+    auto_extract: bool = True
+    extract_trigger: str = "end_of_conversation"  # "end_of_conversation" or "turn_count"
+    max_facts_per_extraction: int = 3
+    
+    # Smart deduplication (uses LLM calls, disabled by default)
+    smart_dedupe: bool = False
+    dedupe_method: str = "llm"  # "llm" or "simple"
+    
+    # Consolidation
+    weekly_consolidate: bool = True
+    consolidate_day: str = "sunday"
+    keep_daily_notes_days: int = 30
+    
+    # Search
+    search_method: str = "text"  # "text", "fts5", "semantic"
+    use_scratchpad: bool = True  # Anthropic scratchpad method for recall
+
+
 class ToolsConfig(BaseModel):
     """Tools configuration."""
     web: WebToolsConfig = Field(default_factory=WebToolsConfig)
@@ -123,6 +145,7 @@ class Config(BaseSettings):
     gateway: GatewayConfig = Field(default_factory=GatewayConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     usage_alert: UsageAlertConfig = Field(default_factory=UsageAlertConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
     
     @property
     def workspace_path(self) -> Path:

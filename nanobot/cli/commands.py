@@ -987,6 +987,183 @@ def config_edit():
 
 
 # ============================================================================
+# Memory Commands
+# ============================================================================
+
+memory_app = typer.Typer(help="Manage long-term memory")
+app.add_typer(memory_app, name="memory")
+
+
+@memory_app.command("show")
+def memory_show(
+    days: int = typer.Option(7, "--days", "-d", help="Number of days to show"),
+    long_term: bool = typer.Option(False, "--long-term", "-l", help="Show long-term memory"),
+):
+    """Show recent memories or long-term memory."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    from rich.markdown import Markdown
+    
+    workspace = get_workspace_path()
+    memory = MemoryStore(workspace)
+    
+    if long_term:
+        # Show long-term memory (MEMORY.md)
+        content = memory.read_long_term()
+        if content:
+            console.print("\n[bold cyan]Long-term Memory (MEMORY.md)[/bold cyan]\n")
+            console.print(Markdown(content))
+        else:
+            console.print("[yellow]No long-term memory found[/yellow]")
+    else:
+        # Show recent daily notes
+        recent = memory.get_recent_memories(days=days)
+        if recent:
+            console.print(f"\n[bold cyan]Recent Memories (Last {days} days)[/bold cyan]\n")
+            console.print(Markdown(recent))
+        else:
+            console.print(f"[yellow]No memories found in the last {days} days[/yellow]")
+
+
+@memory_app.command("search")
+def memory_search(
+    query: str = typer.Argument(..., help="Search query"),
+    days: int = typer.Option(30, "--days", "-d", help="Days to search back"),
+    max_results: int = typer.Option(20, "--max", "-m", help="Maximum results"),
+):
+    """Search through memories."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    
+    workspace = get_workspace_path()
+    memory = MemoryStore(workspace)
+    
+    matches = memory.simple_search(query, days_back=days)
+    
+    if not matches:
+        console.print(f"[yellow]No matches found for: {query}[/yellow]")
+        return
+    
+    console.print(f"\n[bold cyan]Found {len(matches)} matches for '{query}'[/bold cyan]\n")
+    
+    for i, match in enumerate(matches[:max_results], 1):
+        console.print(f"{i}. {match}")
+    
+    if len(matches) > max_results:
+        console.print(f"\n[dim]... and {len(matches) - max_results} more results[/dim]")
+
+
+@memory_app.command("consolidate")
+def memory_consolidate(
+    force: bool = typer.Option(False, "--force", "-f", help="Force consolidation"),
+):
+    """Manually consolidate weekly memories into long-term storage."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.config.loader import load_config
+    from nanobot.providers.ollama_provider import OllamaProvider
+    
+    workspace = get_workspace_path()
+    config = load_config()
+    
+    # Initialize provider for consolidation
+    if not config.providers.ollama.enabled:
+        console.print("[red]Error: Ollama provider is required for consolidation[/red]")
+        console.print("Enable Ollama in your config first")
+        return
+    
+    provider = OllamaProvider(
+        mode=config.providers.ollama.mode,
+        api_key=config.providers.ollama.api_key,
+        base_url=config.providers.ollama.base_url,
+        default_model=config.providers.ollama.default_model,
+    )
+    
+    memory = MemoryStore(workspace, llm_provider=provider, config=config)
+    
+    console.print("[cyan]Consolidating weekly memories...[/cyan]")
+    
+    async def run_consolidation():
+        result = await memory.consolidate_weekly(force=force)
+        return result
+    
+    import asyncio
+    result = asyncio.run(run_consolidation())
+    
+    if result:
+        console.print("[green]✓[/green] Weekly consolidation completed!")
+    else:
+        console.print("[yellow]No consolidation performed (not the scheduled day or insufficient data)[/yellow]")
+        if not force:
+            console.print("[dim]Use --force to consolidate anyway[/dim]")
+
+
+@memory_app.command("stats")
+def memory_stats():
+    """Show memory statistics."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    
+    workspace = get_workspace_path()
+    memory = MemoryStore(workspace)
+    
+    # Get memory files
+    memory_files = memory.list_memory_files()
+    
+    # Count total entries
+    total_entries = 0
+    for file in memory_files:
+        try:
+            content = file.read_text(encoding="utf-8")
+            # Count lines starting with "-" (list items)
+            total_entries += len([line for line in content.split('\n') if line.strip().startswith('-')])
+        except Exception:
+            continue
+    
+    # Get long-term memory size
+    long_term_size = 0
+    if memory.memory_file.exists():
+        long_term_size = len(memory.read_long_term())
+    
+    # Show stats
+    console.print("\n[bold cyan]Memory Statistics[/bold cyan]\n")
+    
+    table = Table.grid(padding=(0, 2))
+    table.add_column(style="bold")
+    table.add_column(justify="right")
+    
+    table.add_row("Daily memory files:", str(len(memory_files)))
+    table.add_row("Total memory entries:", f"{total_entries:,}")
+    table.add_row("Long-term memory size:", f"{long_term_size:,} chars")
+    
+    if memory_files:
+        oldest = memory_files[-1].stem
+        newest = memory_files[0].stem
+        table.add_row("Oldest memory:", oldest)
+        table.add_row("Newest memory:", newest)
+    
+    console.print(table)
+    
+    # Show recent activity
+    if memory_files[:7]:
+        console.print("\n[bold]Recent Activity (Last 7 Days)[/bold]\n")
+        
+        activity_table = Table()
+        activity_table.add_column("Date", style="cyan")
+        activity_table.add_column("Entries", justify="right")
+        
+        for file in memory_files[:7]:
+            try:
+                content = file.read_text(encoding="utf-8")
+                entries = len([line for line in content.split('\n') if line.strip().startswith('-')])
+                activity_table.add_row(file.stem, str(entries))
+            except Exception:
+                continue
+        
+        console.print(activity_table)
+
+
+# ============================================================================
 # Usage Commands
 # ============================================================================
 

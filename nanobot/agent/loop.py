@@ -18,6 +18,8 @@ from nanobot.agent.tools.shell import ExecTool
 from nanobot.agent.tools.web import WebSearchTool, WebFetchTool, OllamaWebSearchTool
 from nanobot.agent.tools.message import MessageTool
 from nanobot.agent.tools.spawn import SpawnTool
+from nanobot.agent.tools.memory import RememberTool, RecallTool, SearchMemoryTool
+from nanobot.agent.memory import MemoryStore
 from nanobot.agent.subagent import SubagentManager
 from nanobot.session.manager import SessionManager
 from nanobot.usage.tracker import UsageTracker
@@ -47,8 +49,9 @@ class AgentLoop:
         ollama_web_search_base_url: str | None = None,
         exec_config: "ExecToolConfig | None" = None,
         usage_alert_config: "UsageAlertConfig | None" = None,
+        memory_config: "MemoryConfig | None" = None,
     ):
-        from nanobot.config.schema import ExecToolConfig, UsageAlertConfig
+        from nanobot.config.schema import ExecToolConfig, UsageAlertConfig, MemoryConfig
         self.bus = bus
         self.provider = provider
         self.workspace = workspace
@@ -59,9 +62,11 @@ class AgentLoop:
         self.ollama_web_search_base_url = ollama_web_search_base_url or "https://ollama.com"
         self.exec_config = exec_config or ExecToolConfig()
         self.usage_alert_config = usage_alert_config or UsageAlertConfig()
+        self.memory_config = memory_config or MemoryConfig()
         
         self.context = ContextBuilder(workspace)
         self.sessions = SessionManager(workspace)
+        self.memory = MemoryStore(workspace, llm_provider=provider, config=self.memory_config)
         self.tools = ToolRegistry()
         self.usage_tracker = UsageTracker()
         self.subagents = SubagentManager(
@@ -147,6 +152,11 @@ class AgentLoop:
         # Message tool
         message_tool = MessageTool(send_callback=self.bus.publish_outbound)
         self.tools.register(message_tool)
+        
+        # Memory tools
+        self.tools.register(RememberTool(memory_store=self.memory))
+        self.tools.register(RecallTool(memory_store=self.memory, llm_provider=self.provider))
+        self.tools.register(SearchMemoryTool(memory_store=self.memory))
         
         # Spawn tool (for subagents)
         spawn_tool = SpawnTool(manager=self.subagents)
@@ -298,6 +308,10 @@ class AgentLoop:
             )
             logger.info(f"Tools used: {tool_summary}")
         
+        # Auto-extract memories if enabled
+        if self.memory_config.auto_extract:
+            await self._auto_extract_memories(session)
+        
         # Save to session
         session.add_message("user", msg.content)
         session.add_message("assistant", final_content)
@@ -422,6 +436,55 @@ class AgentLoop:
         Returns:
             The agent's response.
         """
+    
+    async def _auto_extract_memories(self, session: "Session") -> None:
+        """
+        Automatically extract and save important memories from the conversation.
+        
+        This runs after each conversation turn if auto_extract is enabled.
+        Uses smart extraction to identify facts worth remembering.
+        
+        Args:
+            session: The conversation session to extract from.
+        """
+        try:
+            # Get recent conversation history (last 6 messages)
+            history = session.get_history()
+            if len(history) < 2:
+                return  # Not enough conversation
+            
+            recent_messages = history[-6:]
+            
+            # Convert to format expected by smart_extract
+            conversation = [
+                {"role": msg.get("role", "user"), "content": msg.get("content", "")}
+                for msg in recent_messages
+            ]
+            
+            # Extract facts
+            max_facts = self.memory_config.max_facts_per_extraction
+            facts = await self.memory.smart_extract(conversation, max_facts=max_facts)
+            
+            if not facts:
+                logger.debug("No facts extracted from conversation")
+                return
+            
+            # Optionally deduplicate
+            if self.memory_config.smart_dedupe:
+                facts = await self.memory.smart_dedupe(facts)
+            
+            # Save facts to memory
+            for fact in facts:
+                # Use append_today to save as daily notes
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%H:%M")
+                entry = f"- [{timestamp}] 🤖 Auto-extracted: {fact}"
+                self.memory.append_today(entry)
+            
+            logger.info(f"Auto-extracted {len(facts)} memory facts")
+            
+        except Exception as e:
+            logger.error(f"Auto memory extraction failed: {e}")
         msg = InboundMessage(
             channel="cli",
             sender_id="user",
