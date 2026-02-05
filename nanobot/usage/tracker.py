@@ -143,8 +143,8 @@ class UsageTracker:
         self._records.append(record)
         
         # Persist to disk periodically to reduce I/O overhead
-        # Save every 10 records or when total is divisible by 10
-        if len(self._records) % 10 == 0:
+        # Save every 5 records to ensure data isn't lost
+        if len(self._records) % 5 == 0:
             self._save()
         
         logger.debug(

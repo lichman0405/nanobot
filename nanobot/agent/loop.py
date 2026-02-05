@@ -317,6 +317,9 @@ class AgentLoop:
         session.add_message("assistant", final_content)
         self.sessions.save(session)
         
+        # Force save usage data after each message
+        self.usage_tracker._save()
+        
         return OutboundMessage(
             channel=msg.channel,
             chat_id=msg.chat_id,

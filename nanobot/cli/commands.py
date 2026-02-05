@@ -224,6 +224,7 @@ def gateway(
         ollama_web_search_base_url=config.tools.web.ollama_search.base_url if config.tools.web.ollama_search.enabled else None,
         exec_config=config.tools.exec,
         usage_alert_config=config.usage_alert,
+        memory_config=config.memory,
     )
     
     # Create cron service
@@ -347,6 +348,7 @@ def agent(
         ollama_web_search_base_url=config.tools.web.ollama_search.base_url if config.tools.web.ollama_search.enabled else None,
         exec_config=config.tools.exec,
         usage_alert_config=config.usage_alert,
+        memory_config=config.memory,
     )
     
     if message:
