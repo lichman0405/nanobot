@@ -349,15 +349,15 @@ class MemoryStore:
             List of matching lines.
         """
         query_lower = query.lower()
-        query_words = set(query_lower.split())
         matches = []
         
         # Search long-term memory
         long_term = self.read_long_term()
         if long_term:
             for line in long_term.split('\n'):
-                if any(word in line.lower() for word in query_words if len(word) > 2):
-                    matches.append(f"[MEMORY.md] {line.strip()}")
+                line_stripped = line.strip()
+                if line_stripped and query_lower in line.lower():
+                    matches.append(f"[MEMORY.md] {line_stripped}")
         
         # Search recent daily notes
         today = datetime.now().date()
@@ -369,8 +369,9 @@ class MemoryStore:
             if file_path.exists():
                 content = file_path.read_text(encoding="utf-8")
                 for line in content.split('\n'):
-                    if any(word in line.lower() for word in query_words if len(word) > 2):
-                        matches.append(f"[{date_str}] {line.strip()}")
+                    line_stripped = line.strip()
+                    if line_stripped and query_lower in line.lower():
+                        matches.append(f"[{date_str}] {line_stripped}")
         
         return matches[:50]  # Limit results
     

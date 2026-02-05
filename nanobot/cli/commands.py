@@ -1000,16 +1000,27 @@ app.add_typer(memory_app, name="memory")
 def memory_show(
     days: int = typer.Option(7, "--days", "-d", help="Number of days to show"),
     long_term: bool = typer.Option(False, "--long-term", "-l", help="Show long-term memory"),
+    date: str = typer.Option(None, "--date", help="Show specific date (YYYY-MM-DD)"),
 ):
-    """Show recent memories or long-term memory."""
+    """Show recent memories, long-term memory, or a specific date."""
     from nanobot.agent.memory import MemoryStore
     from nanobot.utils.helpers import get_workspace_path
     from rich.markdown import Markdown
+    from pathlib import Path
     
     workspace = get_workspace_path()
     memory = MemoryStore(workspace)
     
-    if long_term:
+    if date:
+        # Show specific date
+        file_path = memory.memory_dir / f"{date}.md"
+        if file_path.exists():
+            content = file_path.read_text(encoding="utf-8")
+            console.print(f"\n[bold cyan]Memory for {date}[/bold cyan]\n")
+            console.print(Markdown(content))
+        else:
+            console.print(f"[yellow]No memories found for {date}[/yellow]")
+    elif long_term:
         # Show long-term memory (MEMORY.md)
         content = memory.read_long_term()
         if content:
@@ -1112,20 +1123,22 @@ def memory_stats():
     # Get memory files
     memory_files = memory.list_memory_files()
     
-    # Count total entries
-    total_entries = 0
+    # Count daily entries
+    daily_entries = 0
     for file in memory_files:
         try:
             content = file.read_text(encoding="utf-8")
-            # Count lines starting with "-" (list items)
-            total_entries += len([line for line in content.split('\n') if line.strip().startswith('-')])
+            daily_entries += len([line for line in content.split('\n') if line.strip().startswith('-')])
         except Exception:
             continue
     
-    # Get long-term memory size
-    long_term_size = 0
+    # Count long-term entries
+    longterm_entries = 0
+    longterm_size = 0
     if memory.memory_file.exists():
-        long_term_size = len(memory.read_long_term())
+        long_term = memory.read_long_term()
+        longterm_size = len(long_term)
+        longterm_entries = len([line for line in long_term.split('\n') if line.strip().startswith('-')])
     
     # Show stats
     console.print("\n[bold cyan]Memory Statistics[/bold cyan]\n")
@@ -1135,14 +1148,16 @@ def memory_stats():
     table.add_column(justify="right")
     
     table.add_row("Daily memory files:", str(len(memory_files)))
-    table.add_row("Total memory entries:", f"{total_entries:,}")
-    table.add_row("Long-term memory size:", f"{long_term_size:,} chars")
+    table.add_row("Daily entries:", f"{daily_entries:,}")
+    table.add_row("Knowledge base entries:", f"{longterm_entries:,}")
+    table.add_row("Total entries:", f"{daily_entries + longterm_entries:,}")
+    table.add_row("Knowledge base size:", f"{longterm_size:,} chars")
     
     if memory_files:
         oldest = memory_files[-1].stem
         newest = memory_files[0].stem
-        table.add_row("Oldest memory:", oldest)
-        table.add_row("Newest memory:", newest)
+        table.add_row("Oldest daily note:", oldest)
+        table.add_row("Newest daily note:", newest)
     
     console.print(table)
     
@@ -1163,6 +1178,110 @@ def memory_stats():
                 continue
         
         console.print(activity_table)
+
+
+@memory_app.command("add")
+def memory_add(
+    fact: str = typer.Argument(..., help="Fact to remember"),
+    category: str = typer.Option("general", "--category", "-c", help="Category (e.g., user_info, project, preferences)"),
+    importance: str = typer.Option("medium", "--importance", "-i", help="Importance: low, medium, high"),
+):
+    """Add a new memory entry manually."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    from nanobot.config.loader import load_config
+    from nanobot.providers.ollama_provider import OllamaProvider
+    from datetime import datetime
+    import asyncio
+    
+    workspace = get_workspace_path()
+    config = load_config()
+    
+    # Initialize provider for lifecycle management
+    provider = None
+    if config.providers.ollama.enabled:
+        provider = OllamaProvider(
+            mode=config.providers.ollama.mode,
+            api_key=config.providers.ollama.api_key,
+            base_url=config.providers.ollama.base_url,
+            default_model=config.providers.ollama.default_model,
+        )
+    
+    memory = MemoryStore(workspace, llm_provider=provider, config=config.memory)
+    
+    # Write to daily notes
+    timestamp = datetime.now().strftime("%H:%M")
+    importance_emoji = {"low": "ℹ️", "medium": "⭐", "high": "🔥"}
+    entry = f"- [{timestamp}] {importance_emoji.get(importance, '⭐')} `{category}` {fact}"
+    memory.append_today(entry)
+    
+    # Write to knowledge base if provider available
+    if provider and config.memory.enable_lifecycle:
+        async def add_to_kb():
+            result = await memory.lifecycle_update(
+                new_facts=[fact],
+                category=category.title()
+            )
+            return result
+        
+        try:
+            result = asyncio.run(add_to_kb())
+            action = "add" if result["add"] else ("update" if result["update"] else "noop")
+            console.print(f"[green]✓[/green] Added to daily notes and knowledge base ({action})")
+        except Exception as e:
+            console.print(f"[green]✓[/green] Added to daily notes (knowledge base update failed: {e})")
+    else:
+        console.print(f"[green]✓[/green] Added to daily notes")
+
+
+@memory_app.command("clear")
+def memory_clear(
+    days: int = typer.Option(None, "--days", help="Clear memories older than N days"),
+    all: bool = typer.Option(False, "--all", help="Clear ALL memories (including MEMORY.md)"),
+):
+    """Clear old or all memories."""
+    from nanobot.agent.memory import MemoryStore
+    from nanobot.utils.helpers import get_workspace_path
+    from datetime import datetime, timedelta
+    
+    workspace = get_workspace_path()
+    memory = MemoryStore(workspace)
+    
+    if all:
+        if not typer.confirm("⚠️  This will delete ALL memories including MEMORY.md. Continue?"):
+            console.print("[yellow]Cancelled[/yellow]")
+            return
+        
+        # Delete all memory files
+        deleted = 0
+        for file in memory.list_memory_files():
+            file.unlink()
+            deleted += 1
+        
+        if memory.memory_file.exists():
+            memory.memory_file.unlink()
+            deleted += 1
+        
+        console.print(f"[green]✓[/green] Cleared {deleted} memory files")
+    
+    elif days:
+        # Delete files older than N days
+        cutoff = datetime.now().date() - timedelta(days=days)
+        deleted = 0
+        
+        for file in memory.list_memory_files():
+            try:
+                file_date = datetime.strptime(file.stem, "%Y-%m-%d").date()
+                if file_date < cutoff:
+                    file.unlink()
+                    deleted += 1
+            except Exception:
+                continue
+        
+        console.print(f"[green]✓[/green] Deleted {deleted} memory files older than {days} days")
+    
+    else:
+        console.print("[yellow]Specify --days N or --all[/yellow]")
 
 
 # ============================================================================
