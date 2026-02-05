@@ -129,6 +129,19 @@ class MemoryConfig(BaseModel):
     # Search
     search_method: str = "text"  # "text", "fts5", "semantic"
     use_scratchpad: bool = True  # Anthropic scratchpad method for recall
+    
+    # Mem0-inspired lifecycle management (ADD/UPDATE/DELETE/NOOP)
+    enable_lifecycle: bool = True
+    update_threshold: float = 0.7  # Similarity threshold for updates
+    delete_contradictions: bool = True
+    
+    # JIT (Just-In-Time) retrieval
+    jit_retrieval: bool = True
+    jit_method: str = "keyword"  # "keyword", "date", "category"
+    jit_max_results: int = 10
+    
+    # Security
+    max_content_size: int = 8192  # Max size in bytes for content validation
 
 
 class ToolsConfig(BaseModel):

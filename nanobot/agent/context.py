@@ -24,12 +24,17 @@ class ContextBuilder:
         self.memory = MemoryStore(workspace)
         self.skills = SkillsLoader(workspace)
     
-    def build_system_prompt(self, skill_names: list[str] | None = None) -> str:
+    def build_system_prompt(
+        self, 
+        skill_names: list[str] | None = None,
+        query: str | None = None
+    ) -> str:
         """
         Build the system prompt from bootstrap files, memory, and skills.
         
         Args:
             skill_names: Optional list of skills to include.
+            query: Optional query for JIT memory retrieval (if None, loads all memory).
         
         Returns:
             Complete system prompt.
@@ -44,8 +49,12 @@ class ContextBuilder:
         if bootstrap:
             parts.append(bootstrap)
         
-        # Memory context
-        memory = self.memory.get_memory_context()
+        # Memory context - use JIT retrieval if query provided
+        if query:
+            memory = self.memory.retrieve_relevant(query)
+        else:
+            memory = self.memory.get_memory_context()
+        
         if memory:
             parts.append(f"# Memory\n\n{memory}")
         

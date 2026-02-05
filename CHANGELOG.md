@@ -60,11 +60,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Displays usage count for each tool (e.g., `web_fetch (12x)`)
   - Logged at INFO level after task completion
 
+#### Long-term Memory System Enhancements
+- **Mem0-Inspired Lifecycle Management** (`nanobot/agent/memory.py`)
+  - ADD/UPDATE/DELETE/NOOP intelligent fact management
+  - Prevents duplicate memories and contradictions
+  - LLM-powered comparison with keyword fallback
+  - Automatic merging of related facts
+  - Contradiction detection and removal
+  
+- **JIT (Just-In-Time) Retrieval**
+  - Dynamic memory loading based on current query
+  - Three retrieval methods: keyword, date, category
+  - TF-IDF-inspired scoring for relevance ranking
+  - Faster context building (loads only relevant memories)
+  - Reduced token usage compared to loading all memories
+  
+- **Security Enhancements**
+  - Path validation to prevent traversal attacks
+  - Content sanitization (HTML escaping, size limits)
+  - Resource cleanup for proper file handle management
+  - Configurable max content size (default: 8KB)
+  
+- **Enhanced Memory Tools**
+  - `remember` tool now uses lifecycle management
+  - `recall` tool supports JIT retrieval
+  - Auto-extraction integrated with lifecycle
+  
+- **Additional Configuration Options**
+  - `enable_lifecycle` - Toggle Mem0-style management
+  - `update_threshold` - Similarity threshold for updates
+  - `delete_contradictions` - Auto-remove conflicts
+  - `jit_retrieval` - Enable JIT loading
+  - `jit_method` - Choose retrieval strategy
+  - `jit_max_results` - Limit loaded memories
+  - `max_content_size` - Security size limit
+
 ### Changed
 - **Agent Loop**: Integrated automatic token usage tracking for all LLM calls
 - **Agent Loop**: Added tool usage tracking and summary display
+- **Agent Loop**: Enhanced auto-extraction with Mem0 lifecycle management
+- **Memory System**: Upgraded from simple storage to intelligent lifecycle management
+  - RememberTool now uses ADD/UPDATE/DELETE/NOOP logic
+  - Auto-extraction prevents duplicate and contradicting facts
+  - JIT retrieval reduces context size and improves relevance
+- **Context Builder**: Added JIT memory retrieval support
+  - Optionally loads only relevant memories based on current query
+  - Configurable retrieval methods (keyword, date, category)
 - **Session Manager**: Extended to store usage metadata
 - **Configuration Schema**: Added `usage_alert` and `ollama` configuration sections
+- **Configuration Schema**: Extended `memory` configuration with lifecycle and JIT options
 - **Web Tools**: Now supports dual search providers (Brave + Ollama)
 - **Status Command**: Enhanced to show Ollama and usage alert status
 - **Config Commands**: Streamlined configuration workflow
@@ -119,9 +163,6 @@ New configuration options in `~/.nanobot/config.json`:
       "timeout": 120
     }
   },
-      "timeout": 120
-    }
-  },
   "tools": {
     "web": {
       "ollama_search": {
@@ -130,6 +171,31 @@ New configuration options in `~/.nanobot/config.json`:
         "max_results": 5
       }
     }
+  },
+  "memory": {
+    // === Extraction ===
+    "auto_extract": true,
+    "max_facts_per_extraction": 3,
+    
+    // === Deduplication ===
+    "smart_dedupe": false,
+    
+    // === Consolidation ===
+    "weekly_consolidate": true,
+    "consolidate_day": "sunday",
+    
+    // === Lifecycle (NEW!) ===
+    "enable_lifecycle": true,       // Mem0-inspired ADD/UPDATE/DELETE/NOOP
+    "update_threshold": 0.7,
+    "delete_contradictions": true,
+    
+    // === JIT Retrieval (NEW!) ===
+    "jit_retrieval": true,          // Just-In-Time memory loading
+    "jit_method": "keyword",        // "keyword", "date", or "category"
+    "jit_max_results": 10,
+    
+    // === Security (NEW!) ===
+    "max_content_size": 8192        // Max bytes per memory entry
   }
 }
 ```

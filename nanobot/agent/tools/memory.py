@@ -59,10 +59,40 @@ class RememberTool(Tool):
         importance: str | None = None,
         **kwargs: Any
     ) -> str:
-        """Save a fact to memory."""
+        """
+        Save a fact to memory using Mem0-inspired lifecycle management.
+        
+        The fact will be analyzed and either:
+        - ADD: Added as new information
+        - UPDATE: Merged with existing similar information
+        - DELETE: Replace contradicting information
+        - NOOP: Skipped if duplicate
+        """
         from datetime import datetime
         
-        # Build memory entry
+        # Use lifecycle management if available
+        if hasattr(self._memory, 'lifecycle_update'):
+            try:
+                result = await self._memory.lifecycle_update(
+                    new_facts=[fact],
+                    category=category or "general"
+                )
+                
+                # Build response based on lifecycle action
+                if result["add"]:
+                    return f"✓ Added to memory: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                elif result["update"]:
+                    return f"✓ Updated memory: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                elif result["delete"]:
+                    return f"✓ Replaced old info with: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                elif result["noop"]:
+                    return f"ℹ️ Already known: {fact[:50]}{'...' if len(fact) > 50 else ''}"
+                
+            except Exception as e:
+                # Fallback to simple append if lifecycle fails
+                pass
+        
+        # Fallback: simple append to daily notes
         timestamp = datetime.now().strftime("%H:%M")
         entry_parts = [f"- [{timestamp}]"]
         

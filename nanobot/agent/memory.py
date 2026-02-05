@@ -1,8 +1,11 @@
 """Memory system for persistent agent memory."""
 
+import re
+import html
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Literal
+from collections import Counter
 
 from loguru import logger
 
@@ -14,7 +17,10 @@ class MemoryStore:
     Memory system for the agent.
     
     Supports daily notes (memory/YYYY-MM-DD.md) and long-term memory (MEMORY.md).
-    Enhanced with smart extraction, deduplication, and consolidation.
+    Enhanced with:
+    - Mem0-inspired lifecycle management (ADD/UPDATE/DELETE/NOOP)
+    - JIT (Just-In-Time) retrieval for relevant memories
+    - Security hardening (path validation, content sanitization)
     """
     
     def __init__(self, workspace: Path, llm_provider: Any = None, config: Any = None):
@@ -367,3 +373,324 @@ class MemoryStore:
                         matches.append(f"[{date_str}] {line.strip()}")
         
         return matches[:50]  # Limit results
+    
+    # ========== Security & Validation ==========
+    
+    def _validate_path(self, path: Path) -> bool:
+        """
+        Validate that a path is within the memory directory.
+        
+        Prevents path traversal attacks.
+        """
+        try:
+            resolved = path.resolve()
+            memory_resolved = self.memory_dir.resolve()
+            return resolved.is_relative_to(memory_resolved)
+        except (ValueError, OSError):
+            return False
+    
+    def _validate_content(self, content: str) -> str:
+        """
+        Validate and sanitize content.
+        
+        Args:
+            content: Content to validate.
+        
+        Returns:
+            Sanitized content.
+        
+        Raises:
+            ValueError: If content is too large or invalid.
+        """
+        max_size = 8192
+        if self._config and hasattr(self._config, 'memory'):
+            max_size = getattr(self._config.memory, 'max_content_size', 8192)
+        
+        if len(content.encode('utf-8')) > max_size:
+            raise ValueError(f"Content exceeds maximum size of {max_size} bytes")
+        
+        # HTML escape to prevent injection
+        content = html.escape(content, quote=False)
+        
+        # Remove potential script tags
+        content = re.sub(r'</?script[^>]*>', '', content, flags=re.IGNORECASE)
+        
+        return content
+    
+    # ========== Mem0-Inspired Lifecycle Management ==========
+    
+    async def lifecycle_update(
+        self,
+        new_facts: list[str],
+        category: str = "general"
+    ) -> dict[str, list[str]]:
+        """
+        Mem0-inspired lifecycle management: ADD/UPDATE/DELETE/NOOP.
+        
+        Compares new facts against existing memories and determines the
+        appropriate action for each fact.
+        
+        Args:
+            new_facts: List of new facts to process.
+            category: Category for organizing facts.
+        
+        Returns:
+            Dictionary with keys: 'add', 'update', 'delete', 'noop'
+            Each contains a list of facts that underwent that operation.
+        """
+        if not new_facts:
+            return {"add": [], "update": [], "delete": [], "noop": []}
+        
+        # Check if lifecycle is enabled
+        if self._config and hasattr(self._config, 'memory'):
+            if not getattr(self._config.memory, 'enable_lifecycle', True):
+                # Fallback to simple append
+                return {"add": new_facts, "update": [], "delete": [], "noop": []}
+        
+        existing_content = self.read_long_term()
+        
+        if not existing_content or not self._llm:
+            # No existing content or no LLM - just add all
+            logger.info("No existing memory or LLM unavailable, adding all facts")
+            
+            # Still write the facts to long-term memory
+            if new_facts:
+                section_header = f"\n\n## {category.title()} ({today_date()})\n"
+                new_content = "\n".join([f"- {fact}" for fact in new_facts])
+                
+                if existing_content:
+                    self.write_long_term(existing_content + section_header + new_content)
+                else:
+                    self.write_long_term(section_header.lstrip() + new_content)
+            
+            return {"add": new_facts, "update": [], "delete": [], "noop": []}
+        
+        try:
+            # Ask LLM to classify each fact
+            facts_text = "\n".join([f"{i+1}. {fact}" for i, fact in enumerate(new_facts)])
+            
+            response = await self._llm.chat(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a memory lifecycle manager. For each new fact, determine:\n"
+                            "- ADD: Completely new information\n"
+                            "- UPDATE: Updates or extends existing information\n"
+                            "- DELETE: Contradicts existing information (mark which fact to delete)\n"
+                            "- NOOP: Duplicate or irrelevant\n\n"
+                            "Output format:\n"
+                            "ADD: <fact number>\n"
+                            "UPDATE: <fact number> (updates: <existing fact reference>)\n"
+                            "DELETE: <existing fact> (because: <new fact number>)\n"
+                            "NOOP: <fact number>\n"
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Existing memory:\n{existing_content[:2000]}\n\n"
+                            f"New facts:\n{facts_text}"
+                        )
+                    }
+                ],
+                max_tokens=500,
+                temperature=0.2,
+            )
+            
+            if not response or not response.content:
+                # Fallback: add all
+                return {"add": new_facts, "update": [], "delete": [], "noop": []}
+            
+            # Parse LLM response
+            result = {"add": [], "update": [], "delete": [], "noop": []}
+            
+            for line in response.content.split('\n'):
+                line = line.strip().upper()
+                
+                if line.startswith('ADD:'):
+                    # Extract fact number
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        idx = int(match.group(1)) - 1
+                        if 0 <= idx < len(new_facts):
+                            result["add"].append(new_facts[idx])
+                
+                elif line.startswith('NOOP:'):
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        idx = int(match.group(1)) - 1
+                        if 0 <= idx < len(new_facts):
+                            result["noop"].append(new_facts[idx])
+                
+                elif line.startswith('UPDATE:'):
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        idx = int(match.group(1)) - 1
+                        if 0 <= idx < len(new_facts):
+                            result["update"].append(new_facts[idx])
+                
+                elif line.startswith('DELETE:'):
+                    # Extract the fact to delete from existing memory
+                    fact_to_delete = line.replace('DELETE:', '').strip()
+                    if fact_to_delete:
+                        result["delete"].append(fact_to_delete)
+            
+            # Apply the changes
+            if result["add"] or result["update"] or result["delete"]:
+                updated_content = existing_content
+                
+                # Delete contradictions
+                for fact in result["delete"]:
+                    # Remove the fact from memory (simple line removal)
+                    updated_content = updated_content.replace(fact, "")
+                
+                # Add new facts
+                if result["add"]:
+                    section_header = f"\n\n## {category.title()} ({today_date()})\n"
+                    new_content = "\n".join([f"- {fact}" for fact in result["add"]])
+                    updated_content += section_header + new_content
+                
+                # Update facts (for now, treat as additions with context)
+                if result["update"]:
+                    section_header = f"\n\n## Updates ({today_date()})\n"
+                    update_content = "\n".join([f"- {fact}" for fact in result["update"]])
+                    updated_content += section_header + update_content
+                
+                # Write back
+                self.write_long_term(updated_content)
+                
+                logger.info(
+                    f"Lifecycle update: {len(result['add'])} added, "
+                    f"{len(result['update'])} updated, {len(result['delete'])} deleted, "
+                    f"{len(result['noop'])} skipped"
+                )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Lifecycle update failed: {e}, falling back to simple add")
+            # Fallback: add all facts
+            return {"add": new_facts, "update": [], "delete": [], "noop": []}
+    
+    # ========== JIT (Just-In-Time) Retrieval ==========
+    
+    def retrieve_relevant(
+        self,
+        query: str,
+        max_results: int = 10,
+        method: Literal["keyword", "date", "category"] = "keyword"
+    ) -> str:
+        """
+        JIT (Just-In-Time) retrieval of relevant memories based on query.
+        
+        Instead of loading all memories, dynamically retrieve only what's
+        relevant to the current context.
+        
+        Args:
+            query: Query string (e.g., current user message).
+            max_results: Maximum number of memory snippets to return.
+            method: Retrieval method - 'keyword', 'date', or 'category'.
+        
+        Returns:
+            Formatted string of relevant memories.
+        """
+        # Check if JIT is enabled
+        if self._config and hasattr(self._config, 'memory'):
+            if not getattr(self._config.memory, 'jit_retrieval', True):
+                # Fallback to full context
+                return self.get_memory_context()
+            max_results = getattr(self._config.memory, 'jit_max_results', 10)
+            method = getattr(self._config.memory, 'jit_method', 'keyword')
+        
+        if not query or len(query.strip()) < 3:
+            # Query too short, return recent context
+            return self.get_memory_context()
+        
+        if method == "keyword":
+            return self._retrieve_by_keyword(query, max_results)
+        elif method == "date":
+            return self._retrieve_by_date(max_results)
+        elif method == "category":
+            return self._retrieve_by_category(query, max_results)
+        else:
+            return self.get_memory_context()
+    
+    def _retrieve_by_keyword(self, query: str, max_results: int) -> str:
+        """
+        Retrieve memories using keyword matching with TF-IDF-inspired scoring.
+        """
+        query_lower = query.lower()
+        query_words = [w for w in query_lower.split() if len(w) > 2]
+        
+        if not query_words:
+            return self.get_memory_context()
+        
+        # Build vocabulary from all memories
+        all_memories = []
+        
+        # Long-term memory
+        long_term = self.read_long_term()
+        if long_term:
+            for line in long_term.split('\n'):
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    all_memories.append(("MEMORY.md", line))
+        
+        # Recent daily notes (last 7 days)
+        today = datetime.now().date()
+        for i in range(7):
+            date = today - timedelta(days=i)
+            date_str = date.strftime("%Y-%m-%d")
+            file_path = self.memory_dir / f"{date_str}.md"
+            
+            if file_path.exists():
+                content = file_path.read_text(encoding="utf-8")
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        all_memories.append((date_str, line))
+        
+        # Score each memory
+        scored = []
+        for source, memory in all_memories:
+            memory_lower = memory.lower()
+            
+            # Count matching words
+            matches = sum(1 for word in query_words if word in memory_lower)
+            
+            if matches > 0:
+                # Simple TF-IDF-inspired score
+                # Higher score for more matches and shorter memories
+                score = matches / (len(memory.split()) + 1)
+                scored.append((score, source, memory))
+        
+        # Sort by score descending
+        scored.sort(reverse=True)
+        
+        # Format top results
+        if not scored:
+            return ""
+        
+        results = []
+        for score, source, memory in scored[:max_results]:
+            results.append(f"[{source}] {memory}")
+        
+        return "\n".join(results)
+    
+    def _retrieve_by_date(self, max_results: int) -> str:
+        """
+        Retrieve most recent memories.
+        """
+        # Just return the most recent days
+        return self.get_recent_memories(days=min(max_results, 7))
+    
+    def _retrieve_by_category(self, query: str, max_results: int) -> str:
+        """
+        Retrieve memories by category (if categorized in memory).
+        
+        Falls back to keyword matching.
+        """
+        # For now, use keyword method as fallback
+        # In the future, we can add explicit category markers
+        return self._retrieve_by_keyword(query, max_results)

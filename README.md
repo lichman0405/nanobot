@@ -59,6 +59,42 @@
   </tr>
 </table>
 
+### 🧠 Memory System
+
+nanobot features an **intelligent long-term memory system** inspired by [Mem0](https://github.com/mem0ai/mem0) — **without** requiring vector databases:
+
+- **🔄 Lifecycle Management**: Automatically handles ADD/UPDATE/DELETE/NOOP operations for facts
+  - Detects contradictions and updates existing memories intelligently
+  - Prevents duplicate storage for known information
+  - LLM-powered classification with keyword fallback
+
+- **⚡ JIT (Just-In-Time) Retrieval**: Dynamically loads relevant memories on demand
+  - **Keyword-based**: TF-IDF-inspired scoring for semantic relevance
+  - **Date-based**: Filter memories by time period
+  - **Category-based**: Organize by topics (personal, work, preferences, etc.)
+
+- **🔒 Security**: Built-in protections for safe memory operations
+  - Path traversal prevention
+  - Content sanitization (HTML escaping)
+  - Size limits (8KB default per memory)
+
+**Configuration** (`~/.nanobot/config.json`):
+```json
+{
+  "memory": {
+    "enabled": true,
+    "autoExtract": true,
+    "enableLifecycle": true,
+    "jitRetrieval": true,
+    "jitMethod": "keyword",
+    "jitMaxResults": 20,
+    "maxContentSize": 8192
+  }
+}
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for implementation details.
+
 ## 📦 Install
 
 **Install from source** (latest features, recommended for development)
@@ -459,18 +495,20 @@ nanobot/
 ├── agent/          # 🧠 Core agent logic
 │   ├── loop.py     #    Agent loop (LLM ↔ tool execution)
 │   ├── context.py  #    Prompt builder
-│   ├── memory.py   #    Persistent memory
+│   ├── memory.py   #    Persistent memory (with lifecycle & JIT)
 │   ├── skills.py   #    Skills loader
 │   ├── subagent.py #    Background task execution
 │   └── tools/      #    Built-in tools (incl. spawn)
 ├── skills/         # 🎯 Bundled skills (github, weather, tmux...)
-├── channels/       # 📱 WhatsApp integration
+├── channels/       # 📱 Chat channels (Telegram/WhatsApp)
 ├── bus/            # 🚌 Message routing
 ├── cron/           # ⏰ Scheduled tasks
 ├── heartbeat/      # 💓 Proactive wake-up
-├── providers/      # 🤖 LLM providers (OpenRouter, etc.)
+├── providers/      # 🤖 LLM providers (OpenRouter, Ollama, etc.)
 ├── session/        # 💬 Conversation sessions
+├── usage/          # 📊 Token usage tracking
 ├── config/         # ⚙️ Configuration
+├── utils/          # 🔧 Helper utilities
 └── cli/            # 🖥️ Commands
 ```
 

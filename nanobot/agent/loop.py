@@ -442,7 +442,8 @@ class AgentLoop:
         Automatically extract and save important memories from the conversation.
         
         This runs after each conversation turn if auto_extract is enabled.
-        Uses smart extraction to identify facts worth remembering.
+        Uses smart extraction and Mem0-inspired lifecycle management to
+        avoid duplicates and contradictions.
         
         Args:
             session: The conversation session to extract from.
@@ -473,9 +474,31 @@ class AgentLoop:
             if self.memory_config.smart_dedupe:
                 facts = await self.memory.smart_dedupe(facts)
             
-            # Save facts to memory
+            # Use lifecycle management if enabled
+            if self.memory_config.enable_lifecycle and hasattr(self.memory, 'lifecycle_update'):
+                try:
+                    result = await self.memory.lifecycle_update(
+                        new_facts=facts,
+                        category="auto_extracted"
+                    )
+                    
+                    # Log lifecycle actions
+                    added = len(result.get("add", []))
+                    updated = len(result.get("update", []))
+                    deleted = len(result.get("delete", []))
+                    skipped = len(result.get("noop", []))
+                    
+                    logger.info(
+                        f"Memory lifecycle: {added} added, {updated} updated, "
+                        f"{deleted} deleted, {skipped} skipped"
+                    )
+                    return
+                    
+                except Exception as e:
+                    logger.warning(f"Lifecycle update failed, falling back to simple append: {e}")
+            
+            # Fallback: save facts to daily notes
             for fact in facts:
-                # Use append_today to save as daily notes
                 from datetime import datetime
                 timestamp = datetime.now().strftime("%H:%M")
                 entry = f"- [{timestamp}] 🤖 Auto-extracted: {fact}"
