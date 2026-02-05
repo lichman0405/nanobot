@@ -1,5 +1,6 @@
 """Web tools: web_search and web_fetch."""
 
+import asyncio
 import html
 import json
 import os
@@ -8,6 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
+from loguru import logger
 
 from nanobot.agent.tools.base import Tool
 
