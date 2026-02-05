@@ -94,6 +94,58 @@ spawn(task: str, label: str = None) -> str
 
 Use for complex or time-consuming tasks that can run independently. The subagent will complete the task and report back when done.
 
+## Memory Tools
+
+### remember
+Save important information to long-term memory.
+```
+remember(fact: str, category: str = None, importance: str = None) -> str
+```
+
+**Parameters:**
+- `fact`: The information to remember (be specific and concise)
+- `category`: Optional category (e.g., "user_info", "preferences", "project")
+- `importance`: Optional level: "low", "medium", "high"
+
+**Uses Mem0-inspired lifecycle management:**
+- **ADD**: New unique information
+- **UPDATE**: Merges with existing similar info
+- **DELETE**: Replaces contradicting info
+- **NOOP**: Skips if duplicate
+
+**Example:**
+```python
+remember(
+    fact="User is researching Musk's China solar company visits in 2024",
+    category="research",
+    importance="medium"
+)
+```
+
+### recall
+Retrieve relevant memories using semantic search.
+```
+recall(query: str, max_results: int = 5) -> str
+```
+
+**Uses:**
+- JIT (Just-In-Time) retrieval
+- Anthropic scratchpad method (if enabled)
+- Smart relevance ranking
+
+**Example:**
+```python
+recall(query="What do I know about the user's research interests?")
+```
+
+### search_memory
+Full-text search across all memory files.
+```
+search_memory(query: str, max_results: int = 10) -> str
+```
+
+Searches daily notes and MEMORY.md for exact keyword matches.
+
 ## Scheduled Reminders (Cron)
 
 Use the `exec` tool to create scheduled reminders with `nanobot cron add`:
