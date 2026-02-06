@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Custom Agent Name
+- **Agent Name Configuration**
+  - New `nanobot config setup-name` command for setting a custom agent name
+  - Agent will use the custom name when introducing itself in conversations
+  - Name persists in configuration (`~/.nanobot/config.json` under `agents.defaults.name`)
+  - Supports both interactive mode and command-line option (`--name`)
+  - `nanobot config show` now displays the configured agent name
+
 #### Token Usage Tracking System
 - **Usage Tracker Module** (`nanobot/usage/tracker.py`)
   - Track token usage for all LLM calls (prompt tokens, completion tokens, total tokens)

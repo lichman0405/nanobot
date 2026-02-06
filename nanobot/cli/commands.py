@@ -225,6 +225,7 @@ def gateway(
         exec_config=config.tools.exec,
         usage_alert_config=config.usage_alert,
         memory_config=config.memory,
+        agent_name=config.agents.defaults.name,
     )
     
     # Create cron service
@@ -338,7 +339,7 @@ def agent(
         )
 
     bus = MessageBus()
-    
+
     agent_loop = AgentLoop(
         bus=bus,
         provider=provider,
@@ -349,6 +350,7 @@ def agent(
         exec_config=config.tools.exec,
         usage_alert_config=config.usage_alert,
         memory_config=config.memory,
+        agent_name=config.agents.defaults.name,
     )
     
     if message:
@@ -743,7 +745,10 @@ def config_show():
         console.print(f"  {name}: {status}")
     
     console.print(f"\n[bold cyan]Default Model:[/bold cyan] {config.agents.defaults.model}")
-    
+
+    if config.agents.defaults.name:
+        console.print(f"[bold cyan]Agent Name:[/bold cyan] {config.agents.defaults.name}")
+
     console.print("\n[bold cyan]Web Search:[/bold cyan]")
     console.print(f"  Brave Search: {'[green]✓[/green]' if config.tools.web.search.api_key else '[dim]not set[/dim]'}")
     console.print(f"  Ollama Search: {'[green]✓ enabled[/green]' if config.tools.web.ollama_search.enabled else '[dim]disabled[/dim]'}")
@@ -910,7 +915,40 @@ def config_setup_alerts(
             console.print("[green]✓[/green] Usage alerts configured!")
         else:
             config.usage_alert.enabled = False
-    
+
+    save_config(config)
+
+
+@config_app.command("setup-name")
+def config_setup_name(
+    name: str = typer.Option(None, "--name", "-n", help="Set agent name"),
+):
+    """Set a custom name for your agent."""
+    from nanobot.config.loader import load_config, save_config
+
+    config = load_config()
+
+    if name is not None:
+        config.agents.defaults.name = name
+        console.print(f"[green]✓[/green] Agent name set to: {name}")
+    else:
+        # Interactive mode
+        console.print("[bold]Agent Name Configuration[/bold]\n")
+        console.print("Give your agent a custom name. This name will be used")
+        console.print("when the agent introduces itself in conversations.\n")
+
+        current = config.agents.defaults.name
+        if current:
+            console.print(f"Current name: [cyan]{current}[/cyan]\n")
+
+        new_name = console.input("Enter agent name: ").strip()
+        if new_name:
+            config.agents.defaults.name = new_name
+            console.print(f"\n[green]✓[/green] Agent name set to: {new_name}")
+        else:
+            console.print("[yellow]No name entered. Agent will use default identity.[/yellow]")
+            return
+
     save_config(config)
 
 

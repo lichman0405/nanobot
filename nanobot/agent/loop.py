@@ -50,6 +50,7 @@ class AgentLoop:
         exec_config: "ExecToolConfig | None" = None,
         usage_alert_config: "UsageAlertConfig | None" = None,
         memory_config: "MemoryConfig | None" = None,
+        agent_name: str = "",
     ):
         from nanobot.config.schema import ExecToolConfig, UsageAlertConfig, MemoryConfig
         self.bus = bus
@@ -63,8 +64,9 @@ class AgentLoop:
         self.exec_config = exec_config or ExecToolConfig()
         self.usage_alert_config = usage_alert_config or UsageAlertConfig()
         self.memory_config = memory_config or MemoryConfig()
-        
-        self.context = ContextBuilder(workspace)
+        self.agent_name = agent_name
+
+        self.context = ContextBuilder(workspace, agent_name=agent_name)
         self.sessions = SessionManager(workspace)
         self.memory = MemoryStore(workspace, llm_provider=provider, config=self.memory_config)
         self.tools = ToolRegistry()

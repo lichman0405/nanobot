@@ -389,7 +389,8 @@ Config file: `~/.nanobot/config.json`
 {
   "agents": {
     "defaults": {
-      "model": "anthropic/claude-opus-4-5"
+      "model": "anthropic/claude-opus-4-5",
+      "name": "MyAssistant"
     }
   },
   "providers": {
@@ -443,6 +444,7 @@ Config file: `~/.nanobot/config.json`
 | `nanobot onboard` | Initialize config & workspace |
 | `nanobot config show` | Display current configuration |
 | `nanobot config setup-provider` | Setup LLM provider (interactive) |
+| `nanobot config setup-name` | Set a custom name for your agent |
 | `nanobot config setup-alerts` | Configure usage alerts |
 | `nanobot config setup-web-search` | Configure web search tools |
 | `nanobot agent -m "..."` | Chat with the agent |

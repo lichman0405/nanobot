@@ -19,8 +19,9 @@ class ContextBuilder:
     
     BOOTSTRAP_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "TOOLS.md", "IDENTITY.md"]
     
-    def __init__(self, workspace: Path):
+    def __init__(self, workspace: Path, agent_name: str = ""):
         self.workspace = workspace
+        self.agent_name = agent_name
         self.memory = MemoryStore(workspace)
         self.skills = SkillsLoader(workspace)
     
@@ -83,10 +84,16 @@ Skills with available="false" need dependencies installed first - you can try in
         from datetime import datetime
         now = datetime.now().strftime("%Y-%m-%d %H:%M (%A)")
         workspace_path = str(self.workspace.expanduser().resolve())
-        
+
+        # Use custom name if provided, otherwise use default
+        if self.agent_name:
+            identity_line = f"You are {self.agent_name}, a helpful AI assistant."
+        else:
+            identity_line = "You are nanobot, a helpful AI assistant."
+
         return f"""# nanobot 🐈
 
-You are nanobot, a helpful AI assistant. You have access to tools that allow you to:
+{identity_line} You have access to tools that allow you to:
 - Read, write, and edit files
 - Execute shell commands
 - Search the web and fetch web pages
