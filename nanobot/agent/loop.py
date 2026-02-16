@@ -12,10 +12,14 @@ from nanobot.agent.subagent import SubagentManager
 from nanobot.agent.tools.cron import CronTool
 from nanobot.agent.tools.filesystem import EditFileTool, ListDirTool, ReadFileTool, WriteFileTool
 from nanobot.agent.tools.message import MessageTool
+from nanobot.agent.tools.paper import PaperDownloadTool
 from nanobot.agent.tools.registry import ToolRegistry
+from nanobot.agent.tools.scholar import ArxivTool, SemanticScholarTool
 from nanobot.agent.tools.shell import ExecTool
 from nanobot.agent.tools.spawn import SpawnTool
+from nanobot.agent.tools.cif import CifManagerTool
 from nanobot.agent.tools.web import WebFetchTool, WebSearchTool
+from nanobot.agent.tools.zeopp import ZeoppTool
 from nanobot.bus.events import InboundMessage, OutboundMessage
 from nanobot.bus.queue import MessageBus
 from nanobot.config.schema import (
@@ -23,6 +27,7 @@ from nanobot.config.schema import (
     AgentSelfImprovementConfig,
     AgentSessionConfig,
     ExecToolConfig,
+    ResearchToolsConfig,
     WebToolsConfig,
 )
 from nanobot.cron.service import CronService
@@ -57,6 +62,7 @@ class AgentLoop:
         self_improvement_config: AgentSelfImprovementConfig | None = None,
         session_config: AgentSessionConfig | None = None,
         cron_service: CronService | None = None,
+        research_config: ResearchToolsConfig | None = None,
         restrict_to_workspace: bool = False,
         session_manager: SessionManager | None = None,
     ):
@@ -74,6 +80,7 @@ class AgentLoop:
         self.session_config = session_config or AgentSessionConfig()
         self.cron_service = cron_service
         self.restrict_to_workspace = restrict_to_workspace
+        self.research_config = research_config or ResearchToolsConfig()
 
         self.memory = MemoryStore(
             workspace=workspace,
@@ -111,6 +118,7 @@ class AgentLoop:
             model=self.model,
             web_config=self.web_config,
             exec_config=self.exec_config,
+            research_config=self.research_config,
             restrict_to_workspace=restrict_to_workspace,
         )
 
@@ -164,6 +172,23 @@ class AgentLoop:
         # Cron tool (for scheduling)
         if self.cron_service:
             self.tools.register(CronTool(self.cron_service))
+
+        # Academic research tools (enabled explicitly via config)
+        if self.research_config.enabled:
+            self.tools.register(
+                SemanticScholarTool(api_key=self.research_config.scholar_api_key or None)
+            )
+            self.tools.register(ArxivTool())
+            self.tools.register(PaperDownloadTool(workspace=self.workspace))
+            self.tools.register(CifManagerTool(workspace=self.workspace))
+            self.tools.register(
+                ZeoppTool(
+                    workspace=self.workspace,
+                    use_docker=self.research_config.zeopp_use_docker,
+                    docker_image=self.research_config.zeopp_docker_image,
+                    zeopp_binary=self.research_config.zeopp_binary_path,
+                )
+            )
 
     async def run(self) -> None:
         """Run the agent loop, processing messages from the bus."""

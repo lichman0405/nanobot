@@ -14,3 +14,10 @@ If this file has no tasks (only headers and comments), the agent will skip the h
 
 <!-- Move completed tasks here or delete them -->
 
+## Weekly MOF Research Report
+
+- [ ] Every Monday 9:00 AM: Search latest MOF gas sensing and gas adsorption papers from the past week using scholar_search and arxiv_search
+- [ ] Summarize top 10 most cited/relevant new papers
+- [ ] Save report to workspace/mof_data/reports/weekly_YYYY-MM-DD.md
+- [ ] Send decision-maker summary to: (configure email addresses here)
+- [ ] Send lab researcher summary to: (configure email addresses here)

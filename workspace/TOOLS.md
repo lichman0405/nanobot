@@ -148,3 +148,47 @@ To add custom tools:
 1. Create a class that extends `Tool` in `nanobot/agent/tools/`
 2. Implement `name`, `description`, `parameters`, and `execute`
 3. Register it in `AgentLoop._register_default_tools()`
+
+## Academic Research
+
+### scholar_search
+Search academic papers on Semantic Scholar.
+```
+scholar_search(query: str, count: int = 10, year: str = None, fields_of_study: str = None) -> str
+```
+
+Returns paper titles, authors, year, abstract, citation count, DOI, arXiv ID, and open-access PDF links.
+
+### arxiv_search
+Search preprints on arXiv.
+```
+arxiv_search(query: str, count: int = 10, sort_by: str = "relevance") -> str
+```
+
+Returns preprint titles, authors, abstract, categories, and PDF links.
+
+### paper_download
+Download a paper PDF and extract text.
+```
+paper_download(url: str, filename: str = None) -> str
+```
+
+Downloads PDF to `mof_data/papers/`, extracts text, caches result. Detects paywalls.
+
+## MOF Structure Management
+
+### cif_manager
+Manage CIF crystal structure files.
+```
+cif_manager(action: str, query: str = None, path: str = None, url: str = None, metadata: str = None) -> str
+```
+
+Actions: `search`, `info`, `import`, `list`, `stats`. Database stored in `mof_data/`.
+
+### zeopp
+Run Zeo++ geometric analysis on MOF structures.
+```
+zeopp(cif_name: str, calculations: str = "all", probe_radius: float = 1.86) -> str
+```
+
+Calculations: `res` (pore diameters), `sa` (surface area), `vol` (pore volume), `chan` (channels), `all`. Requires Zeo++ Docker container.

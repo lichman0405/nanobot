@@ -802,6 +802,7 @@ def gateway(
         self_improvement_config=config.agents.self_improvement,
         session_config=config.agents.sessions,
         cron_service=cron,
+        research_config=config.tools.research,
         restrict_to_workspace=config.tools.restrict_to_workspace,
         session_manager=session_manager,
     )
@@ -917,6 +918,7 @@ def agent(
         memory_config=config.agents.memory,
         self_improvement_config=config.agents.self_improvement,
         session_config=config.agents.sessions,
+        research_config=config.tools.research,
         restrict_to_workspace=config.tools.restrict_to_workspace,
     )
 

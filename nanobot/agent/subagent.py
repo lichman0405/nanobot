@@ -13,8 +13,12 @@ from nanobot.bus.queue import MessageBus
 from nanobot.providers.base import LLMProvider
 from nanobot.agent.tools.registry import ToolRegistry
 from nanobot.agent.tools.filesystem import ReadFileTool, WriteFileTool, EditFileTool, ListDirTool
+from nanobot.agent.tools.paper import PaperDownloadTool
+from nanobot.agent.tools.scholar import ArxivTool, SemanticScholarTool
 from nanobot.agent.tools.shell import ExecTool
 from nanobot.agent.tools.web import WebSearchTool, WebFetchTool
+from nanobot.agent.tools.cif import CifManagerTool
+from nanobot.agent.tools.zeopp import ZeoppTool
 
 
 class SubagentManager:
@@ -34,15 +38,17 @@ class SubagentManager:
         model: str | None = None,
         web_config: "WebToolsConfig | None" = None,
         exec_config: "ExecToolConfig | None" = None,
+        research_config: "ResearchToolsConfig | None" = None,
         restrict_to_workspace: bool = False,
     ):
-        from nanobot.config.schema import ExecToolConfig, WebToolsConfig
+        from nanobot.config.schema import ExecToolConfig, ResearchToolsConfig, WebToolsConfig
         self.provider = provider
         self.workspace = workspace
         self.bus = bus
         self.model = model or provider.get_default_model()
         self.web_config = web_config or WebToolsConfig()
         self.exec_config = exec_config or ExecToolConfig()
+        self.research_config = research_config or ResearchToolsConfig()
         self.restrict_to_workspace = restrict_to_workspace
         self._running_tasks: dict[str, asyncio.Task[None]] = {}
     
@@ -120,6 +126,21 @@ class SubagentManager:
                 ollama_api_key=self.web_config.fetch.ollama_api_key or None,
                 ollama_api_base=self.web_config.fetch.ollama_api_base,
             ))
+            if self.research_config.enabled:
+                tools.register(
+                    SemanticScholarTool(api_key=self.research_config.scholar_api_key or None)
+                )
+                tools.register(ArxivTool())
+                tools.register(PaperDownloadTool(workspace=self.workspace))
+                tools.register(CifManagerTool(workspace=self.workspace))
+                tools.register(
+                    ZeoppTool(
+                        workspace=self.workspace,
+                        use_docker=self.research_config.zeopp_use_docker,
+                        docker_image=self.research_config.zeopp_docker_image,
+                        zeopp_binary=self.research_config.zeopp_binary_path,
+                    )
+                )
             
             # Build messages with subagent-specific prompt
             system_prompt = self._build_subagent_prompt(task)

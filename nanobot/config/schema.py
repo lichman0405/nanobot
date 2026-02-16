@@ -261,6 +261,16 @@ class WebToolsConfig(BaseModel):
     fetch: WebFetchConfig = Field(default_factory=WebFetchConfig)
 
 
+class ResearchToolsConfig(BaseModel):
+    """MOF research tools configuration. Set enabled=True to activate."""
+
+    enabled: bool = False  # Disabled by default; enable explicitly for research deployments
+    scholar_api_key: str = ""  # Optional Semantic Scholar API key for higher rate limits
+    zeopp_use_docker: bool = True
+    zeopp_docker_image: str = "zeopp:latest"
+    zeopp_binary_path: str = "network"  # Used when zeopp_use_docker=False
+
+
 class ExecToolConfig(BaseModel):
     """Shell exec tool configuration."""
     timeout: int = 60
@@ -270,6 +280,7 @@ class ToolsConfig(BaseModel):
     """Tools configuration."""
     web: WebToolsConfig = Field(default_factory=WebToolsConfig)
     exec: ExecToolConfig = Field(default_factory=ExecToolConfig)
+    research: ResearchToolsConfig = Field(default_factory=ResearchToolsConfig)
     restrict_to_workspace: bool = False  # If true, restrict all tool access to workspace directory
 
 
