@@ -5,21 +5,15 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Build Voro++ 0.4.6
-RUN wget -q https://github.com/chr1shr/voro/archive/refs/tags/v0.4.6.tar.gz -O voro.tar.gz && \
-    tar xzf voro.tar.gz && \
-    cd voro-0.4.6 && \
-    make -j$(nproc) && \
-    make install && \
-    cd / && rm -rf voro-0.4.6 voro.tar.gz
-
-# Build Zeo++ (LSMO mirror on GitHub)
-RUN wget -q https://github.com/lsmo-epfl/zeo_plusplus/archive/refs/heads/master.tar.gz -O zeopp.tar.gz && \
+# Build Zeo++ from active mirror and its bundled Voro++ dependency
+ARG ZEO_URL=https://github.com/mharanczyk/zeoplusplus/archive/refs/heads/master.tar.gz
+RUN wget -q "$ZEO_URL" -O zeopp.tar.gz && \
     tar xzf zeopp.tar.gz && \
-    cd zeo_plusplus-master && \
+    cd zeoplusplus-* && \
+    make -C voro++/src -j$(nproc) && \
     make -j$(nproc) && \
     cp network /usr/local/bin/ && \
-    cd / && rm -rf zeo_plusplus-master zeopp.tar.gz
+    cd / && rm -rf zeoplusplus-* zeopp.tar.gz
 
 WORKDIR /data
 ENTRYPOINT ["network"]
